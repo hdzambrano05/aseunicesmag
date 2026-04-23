@@ -1,0 +1,66 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Models\Usuario;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+
+class AuthController extends BaseApiController
+{
+    public function login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'correo' => 'required|email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error('Datos inválidos', $validator->errors(), 422);
+        }
+
+        $usuario = Usuario::with(['rol', 'asociado'])
+            ->where('correo', $request->correo)
+            ->first();
+
+        if (!$usuario) {
+            return $this->error('Credenciales incorrectas', null, 401);
+        }
+
+        if (!Hash::check($request->password, $usuario->password_hash)) {
+            return $this->error('Credenciales incorrectas', null, 401);
+        }
+
+        if ($usuario->estado_cuenta !== 'ACTIVO') {
+            return $this->error('La cuenta no se encuentra activa', null, 403);
+        }
+
+        $token = $usuario->createToken('api-token')->plainTextToken;
+
+        $usuario->ultimo_login = now();
+        $usuario->save();
+
+        return $this->success([
+            'token' => $token,
+            'usuario' => $usuario,
+        ], 'Inicio de sesión exitoso');
+    }
+
+    public function me(Request $request)
+    {
+        $usuario = $request->user()->load([
+            'rol',
+            'asociado.ciudad',
+        ]);
+
+        return $this->success($usuario, 'Usuario autenticado');
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()?->delete();
+
+        return $this->success(null, 'Sesión cerrada correctamente');
+    }
+}
