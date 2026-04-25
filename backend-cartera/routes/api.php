@@ -33,6 +33,7 @@ Route::get('/ping', function () {
 });
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/afiliacion', [SolicitudAfiliacionController::class, 'store']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -67,6 +68,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/solicitudes-afiliacion/{id}', [SolicitudAfiliacionController::class, 'show']);
     Route::post('/solicitudes-afiliacion', [SolicitudAfiliacionController::class, 'store']);
     Route::put('/solicitudes-afiliacion/{id}', [SolicitudAfiliacionController::class, 'update']);
+    Route::get('/admin/afiliaciones', [SolicitudAfiliacionController::class, 'pendientes']);
+    Route::post('/admin/afiliacion/{id}/aprobar', [SolicitudAfiliacionController::class, 'aprobar']);
+    Route::post('/admin/afiliacion/{id}/rechazar', [SolicitudAfiliacionController::class, 'rechazar']);
 
     Route::get('/tipos-obligacion', [TipoObligacionController::class, 'index']);
     Route::get('/tipos-obligacion/{id}', [TipoObligacionController::class, 'show']);

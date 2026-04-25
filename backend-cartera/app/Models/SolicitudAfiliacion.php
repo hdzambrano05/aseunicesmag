@@ -40,4 +40,10 @@ class SolicitudAfiliacion extends Model
     {
         return $this->belongsTo(Usuario::class, 'aprobado_por');
     }
+
+    public function archivos()
+    {
+        return $this->hasMany(ArchivoAdjunto::class, 'referencia_id')
+            ->where('modulo', 'afiliacion');
+    }
 }

@@ -13,6 +13,7 @@ class ArchivoAdjunto extends Model
     protected $fillable = [
         'modulo',
         'referencia_id',
+        'tipo_archivo',
         'nombre_original',
         'ruta_archivo',
         'extension',

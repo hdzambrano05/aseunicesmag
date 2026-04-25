@@ -40,6 +40,7 @@ class ArchivoAdjuntoController extends BaseApiController
         $validator = Validator::make($request->all(), [
             'modulo' => 'required|string|max:50',
             'referencia_id' => 'required|integer',
+            'tipo_archivo' => 'nullable|string|max:50',
             'archivo' => 'required|file|max:5120',
         ]);
 
@@ -53,6 +54,7 @@ class ArchivoAdjuntoController extends BaseApiController
         $archivo = ArchivoAdjunto::create([
             'modulo' => $request->modulo,
             'referencia_id' => $request->referencia_id,
+            'tipo_archivo' => $request->tipo_archivo,
             'nombre_original' => $file->getClientOriginalName(),
             'ruta_archivo' => $ruta,
             'extension' => $file->getClientOriginalExtension(),

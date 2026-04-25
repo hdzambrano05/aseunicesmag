@@ -114,7 +114,7 @@ export default function LoginPage() {
       }
 
       guardarSesion(data.data.token, data.data.usuario);
-      router.push("/dashboard");
+      router.push("/admin/dashboard");
     } catch (error: unknown) {
       if (error instanceof Error) {
         setMensajeGeneral(error.message);

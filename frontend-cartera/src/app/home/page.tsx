@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
+
 export default function AseUnicesmagLandingPage() {
   const stats = [
     { value: "500+", label: "Egresados asociados" },
@@ -109,9 +111,11 @@ export default function AseUnicesmagLandingPage() {
               </p>
 
               <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                <button className="rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
-                  Afíliate ahora
-                </button>
+                <Link href="/user/afiliacion">
+                  <button className="rounded-2xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
+                    Afíliate ahora
+                  </button>
+                </Link>
                 <button className="rounded-2xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
                   Conocer beneficios
                 </button>
