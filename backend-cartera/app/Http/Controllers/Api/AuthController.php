@@ -36,6 +36,18 @@ class AuthController extends BaseApiController
             return $this->error('La cuenta no se encuentra activa', null, 403);
         }
 
+        $nombreRol = strtoupper($usuario->rol->nombre ?? '');
+
+        if ($nombreRol === 'ASOCIADO') {
+            if (!$usuario->asociado) {
+                return $this->error('Este usuario no tiene información de asociado', null, 403);
+            }
+
+            if ($usuario->asociado->estado_membresia !== 'ACTIVO') {
+                return $this->error('La membresía del asociado no se encuentra activa', null, 403);
+            }
+        }
+
         $token = $usuario->createToken('api-token')->plainTextToken;
 
         $usuario->ultimo_login = now();
@@ -44,9 +56,12 @@ class AuthController extends BaseApiController
         return $this->success([
             'token' => $token,
             'usuario' => $usuario,
+            'rol' => $nombreRol,
+            'redirect' => $nombreRol === 'ADMIN'
+                ? '/admin/dashboard'
+                : '/dashboard/usuario',
         ], 'Inicio de sesión exitoso');
     }
-
     public function me(Request $request)
     {
         $usuario = $request->user()->load([

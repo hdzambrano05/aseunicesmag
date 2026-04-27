@@ -11,6 +11,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use App\Mail\AfiliacionAprobadaMail;
+use App\Mail\AfiliacionRechazadaMail;
 
 class SolicitudAfiliacionController extends BaseApiController
 {
@@ -262,57 +267,103 @@ class SolicitudAfiliacionController extends BaseApiController
 
     public function aprobar(Request $request, int $id)
     {
-        $solicitud = SolicitudAfiliacion::with('asociado')->find($id);
+        DB::beginTransaction();
 
-        if (!$solicitud) {
-            return $this->error('Solicitud no encontrada', null, 404);
-        }
+        try {
+            $solicitud = SolicitudAfiliacion::with(['asociado', 'usuario'])->find($id);
 
-        $solicitud->update([
-            'estado' => 'APROBADA',
-            'aprobado_por' => optional($request->user())->id,
-            'fecha_revision' => now(),
-        ]);
+            if (!$solicitud) {
+                return $this->error('Solicitud no encontrada', null, 404);
+            }
 
-        if ($solicitud->asociado) {
-            $solicitud->asociado->update([
-                'estado_membresia' => 'ACTIVO',
+            $usuario = $solicitud->usuario;
+
+            if (!$usuario) {
+                return $this->error('Usuario no encontrado', null, 404);
+            }
+
+            // Clave diferente para cada usuario aprobado
+            $passwordPlano = Str::random(10);
+
+            // Se guarda la clave encriptada en usuarios.password_hash
+            $usuario->update([
+                'password_hash' => Hash::make($passwordPlano),
+                'estado_cuenta' => 'ACTIVO',
+                'email_verificado' => 1,
             ]);
-        }
 
-        return $this->success($solicitud->fresh(), 'Afiliación aprobada correctamente');
+            $solicitud->update([
+                'estado' => 'APROBADA',
+                'aprobado_por' => optional($request->user())->id,
+                'fecha_revision' => now(),
+            ]);
+
+            if ($solicitud->asociado) {
+                $solicitud->asociado->update([
+                    'estado_membresia' => 'ACTIVO',
+                    'fecha_afiliacion' => now(),
+                ]);
+            }
+
+            Mail::to($usuario->correo)->send(
+                new AfiliacionAprobadaMail($usuario, $passwordPlano)
+            );
+
+            DB::commit();
+
+            return $this->success(
+                $solicitud->fresh(),
+                'Afiliación aprobada correctamente. Se enviaron las credenciales al correo del usuario.'
+            );
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return $this->error('Error al aprobar la afiliación', [
+                'detalle' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function rechazar(Request $request, int $id)
     {
-        $validator = Validator::make($request->all(), [
-            'observacion_admin' => 'required|string',
-        ]);
+        DB::beginTransaction();
 
-        if ($validator->fails()) {
-            return $this->error('Datos inválidos', $validator->errors(), 422);
-        }
+        try {
+            $solicitud = SolicitudAfiliacion::with(['usuario'])->find($id);
 
-        $solicitud = SolicitudAfiliacion::with('asociado')->find($id);
+            if (!$solicitud) {
+                return $this->error('Solicitud no encontrada', null, 404);
+            }
 
-        if (!$solicitud) {
-            return $this->error('Solicitud no encontrada', null, 404);
-        }
+            $usuario = $solicitud->usuario;
 
-        $solicitud->update([
-            'estado' => 'RECHAZADA',
-            'observacion_admin' => $request->observacion_admin,
-            'aprobado_por' => optional($request->user())->id,
-            'fecha_revision' => now(),
-        ]);
-
-        if ($solicitud->asociado) {
-            $solicitud->asociado->update([
-                'estado_membresia' => 'RECHAZADO',
+            $solicitud->update([
+                'estado' => 'RECHAZADA',
+                'observacion_admin' => $request->observacion,
+                'aprobado_por' => optional($request->user())->id,
+                'fecha_revision' => now(),
             ]);
-        }
 
-        return $this->success($solicitud->fresh(), 'Afiliación rechazada correctamente');
+            // 📧 Enviar correo
+            if ($usuario && $usuario->correo) {
+                Mail::to($usuario->correo)->send(
+                    new AfiliacionRechazadaMail($usuario, $request->observacion)
+                );
+            }
+
+            DB::commit();
+
+            return $this->success(
+                $solicitud,
+                'Solicitud rechazada y correo enviado correctamente'
+            );
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return $this->error('Error al rechazar', [
+                'detalle' => $e->getMessage()
+            ], 500);
+        }
     }
 
     private function guardarArchivo(Request $request, string $campo, string $tipo, int $solicitudId, int $usuarioId)
