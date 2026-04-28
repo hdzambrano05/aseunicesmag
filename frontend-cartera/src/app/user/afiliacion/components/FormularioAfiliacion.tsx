@@ -24,6 +24,9 @@ export default function FormularioAfiliacion() {
   const [beneficiarios, setBeneficiarios] = useState([
     { identificacion: "", nombres: "", parentesco: "" },
   ]);
+  const [nombresArchivos, setNombresArchivos] = useState<
+    Record<string, string>
+  >({});
 
   const inputClass =
     "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-700 focus:ring-2 focus:ring-blue-100";
@@ -132,6 +135,7 @@ export default function FormularioAfiliacion() {
 
       form.reset();
       setFirmaBase64("");
+      setNombresArchivos({});
       setPasoActual(0);
       setBeneficiarios([{ identificacion: "", nombres: "", parentesco: "" }]);
     } catch (err) {
@@ -212,7 +216,11 @@ export default function FormularioAfiliacion() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-5"
+            encType="multipart/form-data"
+          >
             <div className={pasoActual === 0 ? "block" : "hidden"}>
               <div className={sectionClass}>
                 <h2 className={titleClass}>Datos de solicitud</h2>
@@ -712,7 +720,21 @@ export default function FormularioAfiliacion() {
                             name={file.name}
                             accept={file.accept}
                             required
+                            onChange={(e) => {
+                              const archivo = e.target.files?.[0];
+
+                              setNombresArchivos((prev) => ({
+                                ...prev,
+                                [file.name]: archivo ? archivo.name : "",
+                              }));
+                            }}
                           />
+
+                          {nombresArchivos[file.name] && (
+                            <p className="mt-2 text-xs font-semibold text-emerald-600">
+                              Archivo seleccionado: {nombresArchivos[file.name]}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </label>
