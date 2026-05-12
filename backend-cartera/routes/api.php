@@ -63,6 +63,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/asociados', [AsociadoController::class, 'index']);
     Route::get('/asociados/mi-perfil', [AsociadoController::class, 'miPerfil']);
     Route::get('/asociados/{id}', [AsociadoController::class, 'show']);
+    Route::get(
+        '/asociado/{asociadoId}/estado-pago',
+        [ObligacionController::class, 'estadoPagoAsociado']
+    );
 
     Route::get('/solicitudes-afiliacion', [SolicitudAfiliacionController::class, 'index']);
     Route::get('/solicitudes-afiliacion/{id}', [SolicitudAfiliacionController::class, 'show']);
@@ -82,9 +86,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/periodos-cobro', [PeriodoCobroController::class, 'store']);
     Route::put('/periodos-cobro/{id}', [PeriodoCobroController::class, 'update']);
 
-    Route::get('/obligaciones', [ObligacionController::class, 'index']);
-    Route::get('/obligaciones/mis-obligaciones', [ObligacionController::class, 'misObligaciones']);
-    Route::get('/obligaciones/{id}', [ObligacionController::class, 'show']);
+    Route::post('/obligaciones/generar-afiliacion', [ObligacionController::class, 'generarAfiliacion']);
+    Route::post('/obligaciones/generar-sostenimiento', [ObligacionController::class, 'generarSostenimiento']);
+    Route::get('/obligaciones/asociado/{asociadoId}', [ObligacionController::class, 'obligacionesPorAsociado']);
     Route::get('/asociados/{asociadoId}/obligaciones', [ObligacionController::class, 'porAsociado']);
 
     Route::get('/descuentos', [DescuentoController::class, 'index']);

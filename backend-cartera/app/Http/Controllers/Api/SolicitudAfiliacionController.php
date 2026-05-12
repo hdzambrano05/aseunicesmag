@@ -6,6 +6,11 @@ use App\Models\ArchivoAdjunto;
 use App\Models\Asociado;
 use App\Models\SolicitudAfiliacion;
 use App\Models\Usuario;
+use App\Models\Obligacion;
+use App\Models\TipoObligacion;
+use App\Models\PeriodoCobro;
+use App\Models\SmmlvHistorico;
+
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -276,16 +281,24 @@ class SolicitudAfiliacionController extends BaseApiController
                 return $this->error('Solicitud no encontrada', null, 404);
             }
 
+            if ($solicitud->estado === 'APROBADA') {
+                return $this->error('Esta solicitud ya fue aprobada', null, 400);
+            }
+
             $usuario = $solicitud->usuario;
 
             if (!$usuario) {
                 return $this->error('Usuario no encontrado', null, 404);
             }
 
-            // Clave diferente para cada usuario aprobado
+            $asociado = $solicitud->asociado;
+
+            if (!$asociado) {
+                return $this->error('Asociado no encontrado', null, 404);
+            }
+
             $passwordPlano = Str::random(10);
 
-            // Se guarda la clave encriptada en usuarios.password_hash
             $usuario->update([
                 'password_hash' => Hash::make($passwordPlano),
                 'estado_cuenta' => 'ACTIVO',
@@ -298,10 +311,71 @@ class SolicitudAfiliacionController extends BaseApiController
                 'fecha_revision' => now(),
             ]);
 
-            if ($solicitud->asociado) {
-                $solicitud->asociado->update([
-                    'estado_membresia' => 'ACTIVO',
-                    'fecha_afiliacion' => now(),
+            $asociado->update([
+                'estado_membresia' => 'ACTIVO',
+                'fecha_afiliacion' => now(),
+            ]);
+
+            // Buscar tipo de obligación SOSTENIMIENTO
+            $tipoSostenimiento = TipoObligacion::where('codigo', 'SOSTENIMIENTO')->first();
+
+            if (!$tipoSostenimiento) {
+                DB::rollBack();
+                return $this->error('No existe el tipo de obligación SOSTENIMIENTO', null, 400);
+            }
+
+            // Buscar SMMLV activo del año actual
+            $anio = now()->year;
+
+            $smmlv = SmmlvHistorico::where('anio', $anio)
+                ->where('activo', 1)
+                ->first();
+
+            if (!$smmlv) {
+                DB::rollBack();
+                return $this->error('No existe SMMLV activo para el año ' . $anio, null, 400);
+            }
+
+            // Buscar periodo mensual actual
+            $periodo = PeriodoCobro::where('anio', $anio)
+                ->where('tipo_periodo', 'MENSUAL')
+                ->whereDate('fecha_inicio', '<=', now())
+                ->whereDate('fecha_fin', '>=', now())
+                ->where('activo', 1)
+                ->first();
+
+            if (!$periodo) {
+                DB::rollBack();
+                return $this->error('No existe periodo mensual activo para la fecha actual', null, 400);
+            }
+
+            // Cálculo: sostenimiento = 1% del SMMLV
+            $valorBase = round($smmlv->valor * 0.01, 2);
+
+            // Evitar duplicar obligación del mismo periodo
+            $yaTieneObligacion = Obligacion::where('asociado_id', $asociado->id)
+                ->where('tipo_obligacion_id', $tipoSostenimiento->id)
+                ->where('periodo_id', $periodo->id)
+                ->whereIn('estado', ['PENDIENTE', 'EN_REVISION', 'VENCIDA'])
+                ->exists();
+
+            if (!$yaTieneObligacion) {
+                Obligacion::create([
+                    'asociado_id' => $asociado->id,
+                    'tipo_obligacion_id' => $tipoSostenimiento->id,
+                    'periodo_id' => $periodo->id,
+                    'smmlv_id' => $smmlv->id,
+                    'numero_obligacion' => 'SOS-' . now()->format('YmdHis') . '-' . $asociado->id,
+                    'concepto' => 'Cuota de sostenimiento - ' . $periodo->nombre,
+                    'valor_base' => $valorBase,
+                    'valor_descuento' => 0,
+                    'valor_recargo' => 0,
+                    'saldo_pendiente' => $valorBase,
+                    'estado' => 'PENDIENTE',
+                    'fecha_generacion' => now(),
+                    'fecha_vencimiento' => $periodo->fecha_fin,
+                    'observacion' => 'Obligación generada automáticamente al aprobar afiliación',
+                    'generada_automaticamente' => 1,
                 ]);
             }
 
@@ -312,14 +386,16 @@ class SolicitudAfiliacionController extends BaseApiController
             DB::commit();
 
             return $this->success(
-                $solicitud->fresh(),
-                'Afiliación aprobada correctamente. Se enviaron las credenciales al correo del usuario.'
+                $solicitud->fresh(['usuario', 'asociado']),
+                'Afiliación aprobada correctamente. Se generó la cuota de sostenimiento y se enviaron las credenciales.'
             );
         } catch (\Throwable $e) {
             DB::rollBack();
 
             return $this->error('Error al aprobar la afiliación', [
-                'detalle' => $e->getMessage()
+                'detalle' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile(),
             ], 500);
         }
     }
