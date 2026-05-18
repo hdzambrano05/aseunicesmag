@@ -19,21 +19,19 @@ use App\Http\Controllers\Api\ReferidoController;
 use App\Http\Controllers\Api\RolController;
 use App\Http\Controllers\Api\SesionUsuarioController;
 use App\Http\Controllers\Api\SmmlvController;
-use App\Http\Controllers\Api\SolicitudAfiliacionController;
 use App\Http\Controllers\Api\TipoObligacionController;
 use App\Http\Controllers\Api\UsuarioController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/ping', function () {
     return response()->json([
         'ok' => true,
-        'message' => 'API funcionando correctamente'
+        'message' => 'API funcionando correctamente',
     ]);
 });
 
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/afiliacion', [SolicitudAfiliacionController::class, 'store']);
+Route::post('/afiliacion', 'App\Http\Controllers\Api\SolicitudAfiliacionController@store');
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -63,18 +61,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/asociados', [AsociadoController::class, 'index']);
     Route::get('/asociados/mi-perfil', [AsociadoController::class, 'miPerfil']);
     Route::get('/asociados/{id}', [AsociadoController::class, 'show']);
-    Route::get(
-        '/asociado/{asociadoId}/estado-pago',
-        [ObligacionController::class, 'estadoPagoAsociado']
-    );
 
-    Route::get('/solicitudes-afiliacion', [SolicitudAfiliacionController::class, 'index']);
-    Route::get('/solicitudes-afiliacion/{id}', [SolicitudAfiliacionController::class, 'show']);
-    Route::post('/solicitudes-afiliacion', [SolicitudAfiliacionController::class, 'store']);
-    Route::put('/solicitudes-afiliacion/{id}', [SolicitudAfiliacionController::class, 'update']);
-    Route::get('/admin/afiliaciones', [SolicitudAfiliacionController::class, 'pendientes']);
-    Route::post('/admin/afiliacion/{id}/aprobar', [SolicitudAfiliacionController::class, 'aprobar']);
-    Route::post('/admin/afiliacion/{id}/rechazar', [SolicitudAfiliacionController::class, 'rechazar']);
+    Route::get('/solicitudes-afiliacion', 'App\Http\Controllers\Api\SolicitudAfiliacionController@index');
+    Route::get('/solicitudes-afiliacion/{id}', 'App\Http\Controllers\Api\SolicitudAfiliacionController@show');
+    Route::post('/solicitudes-afiliacion', 'App\Http\Controllers\Api\SolicitudAfiliacionController@store');
+    Route::put('/solicitudes-afiliacion/{id}', 'App\Http\Controllers\Api\SolicitudAfiliacionController@update');
+
+    Route::get('/admin/afiliaciones', 'App\Http\Controllers\Api\SolicitudAfiliacionController@pendientes');
+    Route::post('/admin/afiliacion/{id}/aprobar', 'App\Http\Controllers\Api\SolicitudAfiliacionController@aprobar');
+    Route::post('/admin/afiliacion/{id}/rechazar', 'App\Http\Controllers\Api\SolicitudAfiliacionController@rechazar');
 
     Route::get('/tipos-obligacion', [TipoObligacionController::class, 'index']);
     Route::get('/tipos-obligacion/{id}', [TipoObligacionController::class, 'show']);
@@ -88,13 +83,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/obligaciones/generar-afiliacion', [ObligacionController::class, 'generarAfiliacion']);
     Route::post('/obligaciones/generar-sostenimiento', [ObligacionController::class, 'generarSostenimiento']);
+    Route::get('/obligaciones/mis-obligaciones', [ObligacionController::class, 'misObligaciones']);
     Route::get('/obligaciones/asociado/{asociadoId}', [ObligacionController::class, 'obligacionesPorAsociado']);
-    Route::get('/asociados/{asociadoId}/obligaciones', [ObligacionController::class, 'porAsociado']);
+    Route::put('/obligaciones/{id}/anular', [ObligacionController::class, 'anular']);
+    Route::get('/asociado/{asociadoId}/estado-pago', [ObligacionController::class, 'estadoPagoAsociado']);
 
     Route::get('/descuentos', [DescuentoController::class, 'index']);
     Route::get('/descuentos/{id}', [DescuentoController::class, 'show']);
     Route::post('/descuentos', [DescuentoController::class, 'store']);
     Route::put('/descuentos/{id}', [DescuentoController::class, 'update']);
+    Route::post('/descuentos/seed-reglamento', [DescuentoController::class, 'seedReglamento']);
+    Route::put('/descuentos/{id}/estado', [DescuentoController::class, 'cambiarEstado']);
 
     Route::get('/obligacion-descuento', [ObligacionDescuentoController::class, 'index']);
     Route::get('/obligacion-descuento/{id}', [ObligacionDescuentoController::class, 'show']);
@@ -120,15 +119,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/certificados/{id}', [CertificadoController::class, 'update']);
 
     Route::get('/notificaciones', [NotificacionController::class, 'index']);
+    Route::get('/mis-notificaciones', [NotificacionController::class, 'misNotificaciones']);
+    Route::put('/notificaciones/marcar-todas-leidas', [NotificacionController::class, 'marcarTodasLeidas']);
     Route::get('/notificaciones/{id}', [NotificacionController::class, 'show']);
     Route::post('/notificaciones', [NotificacionController::class, 'store']);
     Route::put('/notificaciones/{id}', [NotificacionController::class, 'update']);
-    Route::post('/notificaciones/{id}/marcar-leida', [NotificacionController::class, 'marcarLeida']);
+    Route::put('/notificaciones/{id}/leida', [NotificacionController::class, 'marcarLeida']);
 
     Route::get('/smmlv', [SmmlvController::class, 'index']);
+    Route::get('/smmlv-activo', [SmmlvController::class, 'activo']);
     Route::get('/smmlv/{id}', [SmmlvController::class, 'show']);
     Route::post('/smmlv', [SmmlvController::class, 'store']);
     Route::put('/smmlv/{id}', [SmmlvController::class, 'update']);
+    Route::put('/smmlv/{id}/estado', [SmmlvController::class, 'cambiarEstado']);
 
     Route::get('/parametros-sistema', [ParametroSistemaController::class, 'index']);
     Route::get('/parametros-sistema/{id}', [ParametroSistemaController::class, 'show']);
@@ -139,6 +142,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/asociados/{asociadoId}/cambiar-estado', [EstadoMembresiaController::class, 'cambiarEstado']);
 
     Route::get('/auditoria', [AuditoriaController::class, 'index']);
+    Route::get('/mis-auditorias', [AuditoriaController::class, 'misAuditorias']);
     Route::get('/auditoria/{id}', [AuditoriaController::class, 'show']);
 
     Route::get('/archivos-adjuntos', [ArchivoAdjuntoController::class, 'index']);

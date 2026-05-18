@@ -2,43 +2,55 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\ArchivoAdjunto;
-use App\Models\Asociado;
-use App\Models\SolicitudAfiliacion;
-use App\Models\Usuario;
-use App\Models\Obligacion;
-use App\Models\TipoObligacion;
-use App\Models\PeriodoCobro;
-use App\Models\SmmlvHistorico;
-
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use App\Mail\AfiliacionAprobadaMail;
 use App\Mail\AfiliacionRechazadaMail;
+use App\Models\ArchivoAdjunto;
+use App\Models\Asociado;
+use App\Models\Obligacion;
+use App\Models\PeriodoCobro;
+use App\Models\ReciboPago;
+use App\Models\SmmlvHistorico;
+use App\Models\SolicitudAfiliacion;
+use App\Models\TipoObligacion;
+use App\Models\Usuario;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
 
 class SolicitudAfiliacionController extends BaseApiController
 {
     public function index(Request $request)
     {
-        $query = SolicitudAfiliacion::with(['usuario', 'asociado', 'aprobador', 'archivos'])
-            ->orderByDesc('fecha_solicitud');
+        $query = SolicitudAfiliacion::with([
+            'usuario',
+            'asociado',
+            'aprobador',
+            'archivos',
+        ])->orderByDesc('fecha_solicitud');
 
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
         }
 
-        return $this->success($query->paginate(20), 'Listado de solicitudes de afiliación');
+        return $this->success(
+            $query->paginate(20),
+            'Listado de solicitudes de afiliación'
+        );
     }
 
     public function show(int $id)
     {
-        $solicitud = SolicitudAfiliacion::with(['usuario', 'asociado', 'aprobador', 'archivos'])->find($id);
+        $solicitud = SolicitudAfiliacion::with([
+            'usuario',
+            'asociado',
+            'aprobador',
+            'archivos',
+        ])->find($id);
 
         if (!$solicitud) {
             return $this->error('Solicitud no encontrada', null, 404);
@@ -54,7 +66,7 @@ class SolicitudAfiliacionController extends BaseApiController
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'fecha_solicitud' => 'required|date',
+            'fecha_solicitud' => 'nullable|date',
             'se_afilia_por_vez' => 'required|string|max:30',
             'radicacion' => 'nullable|string|max:100',
 
@@ -98,6 +110,13 @@ class SolicitudAfiliacionController extends BaseApiController
             'diploma' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
             'foto_digital' => 'required|image|max:2048',
             'recibo_pago' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+
+            'valor_reportado' => 'nullable|numeric|min:1',
+            'fecha_pago' => 'nullable|date',
+            'banco' => 'nullable|string|max:100',
+            'referencia_pago' => 'nullable|string|max:100',
+            'observacion_pago' => 'nullable|string',
+            'aplica_practica' => 'nullable|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -107,24 +126,21 @@ class SolicitudAfiliacionController extends BaseApiController
         DB::beginTransaction();
 
         try {
-            $usuario = Usuario::where('numero_documento', $request->numero_documento)->first();
-
-            if (!$usuario) {
-                $usuario = Usuario::where('correo', $request->correo)->first();
-            }
+            $usuario = Usuario::where('numero_documento', $request->numero_documento)
+                ->orWhere('correo', $request->correo)
+                ->first();
 
             if ($usuario) {
                 $usuario->update([
-                    'rol_id' => $usuario->rol_id ?: 2,
                     'tipo_documento' => $usuario->tipo_documento ?: 'CC',
                     'numero_documento' => $request->numero_documento,
                     'nombres' => $request->nombres,
                     'apellidos' => $request->apellidos,
                     'correo' => $request->correo,
                     'telefono' => $request->telefono,
-                    'estado_cuenta' => 'ACTIVO',
-                    'acepta_habeas_data' => $request->has('acepta_habeas_data') ? 1 : 0,
-                    'acepta_terminos' => $request->has('acepta_terminos') ? 1 : 0,
+                    'acepta_habeas_data' => $request->boolean('acepta_habeas_data'),
+                    'acepta_terminos' => $request->boolean('acepta_terminos'),
+                    'updated_at' => now(),
                 ]);
             } else {
                 $usuario = Usuario::create([
@@ -135,36 +151,56 @@ class SolicitudAfiliacionController extends BaseApiController
                     'apellidos' => $request->apellidos,
                     'correo' => $request->correo,
                     'telefono' => $request->telefono,
-                    'password_hash' => bcrypt($request->numero_documento),
-                    'estado_cuenta' => 'ACTIVO',
-                    'acepta_habeas_data' => $request->has('acepta_habeas_data') ? 1 : 0,
-                    'acepta_terminos' => $request->has('acepta_terminos') ? 1 : 0,
+                    'password_hash' => Hash::make(Str::random(12)),
+                    'email_verificado' => 0,
+                    'estado_cuenta' => 'PENDIENTE',
+                    'acepta_habeas_data' => $request->boolean('acepta_habeas_data'),
+                    'acepta_terminos' => $request->boolean('acepta_terminos'),
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
 
-            $asociado = Asociado::updateOrCreate(
-                ['usuario_id' => $usuario->id],
-                [
-                    'codigo_asociado' => 'ASO-' . str_pad($usuario->id, 5, '0', STR_PAD_LEFT),
+            $asociado = Asociado::where('usuario_id', $usuario->id)->first();
+
+            if (!$asociado) {
+                $asociado = Asociado::create([
+                    'usuario_id' => $usuario->id,
+                    'ciudad_id' => null,
+                    'codigo_asociado' => 'ASO-' . now()->format('YmdHis') . '-' . $usuario->id,
                     'fecha_nacimiento' => $request->fecha_nacimiento,
                     'genero' => $request->genero,
                     'direccion' => $request->direccion,
                     'profesion' => $request->titulo_obtenido,
                     'empresa' => $request->empresa,
                     'cargo' => $request->cargo,
-                    'programa_academico' => $request->titulo_obtenido,
-                    'universidad' => 'UNICESMAG',
+                    'programa_academico' => $request->nivel_educativo,
+                    'universidad' => 'Universidad CESMAG',
                     'categoria_asociado' => 'REGULAR',
                     'estado_membresia' => 'PENDIENTE',
-                    'fecha_afiliacion' => now(),
                     'observaciones' => $request->motivacion_afiliacion,
-                ]
-            );
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $asociado->update([
+                    'fecha_nacimiento' => $request->fecha_nacimiento,
+                    'genero' => $request->genero,
+                    'direccion' => $request->direccion,
+                    'profesion' => $request->titulo_obtenido,
+                    'empresa' => $request->empresa,
+                    'cargo' => $request->cargo,
+                    'programa_academico' => $request->nivel_educativo,
+                    'estado_membresia' => 'PENDIENTE',
+                    'observaciones' => $request->motivacion_afiliacion,
+                    'updated_at' => now(),
+                ]);
+            }
 
             $solicitud = SolicitudAfiliacion::create([
                 'usuario_id' => $usuario->id,
                 'asociado_id' => $asociado->id,
-                'fecha_solicitud' => now(),
+                'fecha_solicitud' => $request->fecha_solicitud ?? now(),
                 'estado' => 'PENDIENTE',
                 'origen' => 'WEB',
                 'observacion_admin' => null,
@@ -172,49 +208,178 @@ class SolicitudAfiliacionController extends BaseApiController
                 'fecha_revision' => null,
             ]);
 
-            $this->guardarArchivo($request, 'copia_cedula', 'CEDULA', $solicitud->id, $usuario->id);
-            $this->guardarArchivo($request, 'diploma', 'DIPLOMA', $solicitud->id, $usuario->id);
-            $this->guardarArchivo($request, 'foto_digital', 'FOTO', $solicitud->id, $usuario->id);
-            $this->guardarArchivo($request, 'recibo_pago', 'RECIBO_PAGO', $solicitud->id, $usuario->id);
+            /*
+|--------------------------------------------------------------------------
+| GUARDAR FIRMA DEL SOLICITANTE
+|--------------------------------------------------------------------------
+*/
 
-            $rutaFirma = $this->guardarFirmaBase64(
-                $request->firma_solicitante,
-                $solicitud->id,
-                $usuario->id
+            $firma = null;
+
+            if ($request->filled('firma_solicitante')) {
+
+                $firmaBase64 = $request->firma_solicitante;
+
+                if (preg_match('/^data:image\/(\w+);base64,/', $firmaBase64, $type)) {
+
+                    $extensionFirma = strtolower($type[1]);
+
+                    $firmaLimpia = substr($firmaBase64, strpos($firmaBase64, ',') + 1);
+
+                    $firmaLimpia = base64_decode($firmaLimpia);
+
+                    $nombreFirma = 'firma_solicitante_' . $solicitud->id . '.' . $extensionFirma;
+
+                    $rutaFirma = 'afiliaciones/firmas/' . $nombreFirma;
+
+                    Storage::disk('public')->put(
+                        $rutaFirma,
+                        $firmaLimpia
+                    );
+
+                    ArchivoAdjunto::create([
+                        'modulo' => 'afiliacion',
+                        'referencia_id' => $solicitud->id,
+                        'tipo_archivo' => 'FIRMA_SOLICITANTE',
+                        'nombre_original' => $nombreFirma,
+                        'ruta_archivo' => $rutaFirma,
+                        'extension' => $extensionFirma,
+                        'mime_type' => 'image/' . $extensionFirma,
+                        'peso_bytes' => Storage::disk('public')->size($rutaFirma),
+                        'subido_por' => $usuario->id ?? null,
+                        'fecha_subida' => now(),
+                    ]);
+
+                    $firma = $request->firma_solicitante;
+                }
+            }
+
+            /*
+|--------------------------------------------------------------------------
+| GENERAR PDF DEL FORMULARIO
+|--------------------------------------------------------------------------
+*/
+
+            $pdf = Pdf::loadView('pdf.formato_afiliacion', [
+                'datos' => $request->all(),
+                'firma' => $firma,
+            ]);
+
+            $nombrePdf = 'formulario_afiliacion_' . $solicitud->id . '.pdf';
+
+            $rutaPdf = 'afiliaciones/pdfs/' . $nombrePdf;
+
+            Storage::disk('public')->put(
+                $rutaPdf,
+                $pdf->output()
             );
 
-            $rutaPdf = $this->generarPdfAfiliacion(
-                $request,
-                $usuario,
-                $asociado,
-                $solicitud,
-                $rutaFirma
-            );
+            /*
+|--------------------------------------------------------------------------
+| GUARDAR PDF EN ARCHIVOS_ADJUNTOS
+|--------------------------------------------------------------------------
+*/
 
             ArchivoAdjunto::create([
                 'modulo' => 'afiliacion',
                 'referencia_id' => $solicitud->id,
-                'tipo_archivo' => 'FORMATO_AFILIACION',
-                'nombre_original' => 'formato_afiliacion_' . $solicitud->id . '.pdf',
+                'tipo_archivo' => 'FORMULARIO_AFILIACION',
+                'nombre_original' => $nombrePdf,
                 'ruta_archivo' => $rutaPdf,
                 'extension' => 'pdf',
                 'mime_type' => 'application/pdf',
                 'peso_bytes' => Storage::disk('public')->size($rutaPdf),
-                'subido_por' => $usuario->id,
+                'subido_por' => $usuario->id ?? null,
                 'fecha_subida' => now(),
+            ]);
+
+            $this->guardarArchivo($request, 'copia_cedula', 'COPIA_CEDULA', $solicitud->id, $usuario->id);
+            $this->guardarArchivo($request, 'diploma', 'DIPLOMA', $solicitud->id, $usuario->id);
+            $this->guardarArchivo($request, 'foto_digital', 'FOTO_DIGITAL', $solicitud->id, $usuario->id);
+
+            $anio = now()->year;
+
+            $smmlv = SmmlvHistorico::where('anio', $anio)
+                ->where('activo', 1)
+                ->first();
+
+            if (!$smmlv) {
+                DB::rollBack();
+                return $this->error('No existe SMMLV activo para el año ' . $anio, null, 400);
+            }
+
+            $tipoAfiliacion = TipoObligacion::where('codigo', 'AFILIACION')->first();
+
+            if (!$tipoAfiliacion) {
+                DB::rollBack();
+                return $this->error('No existe el tipo de obligación AFILIACION', null, 400);
+            }
+
+            $valorBaseAfiliacion = round($smmlv->valor * 0.05, 2);
+            $valorDescuento = 0;
+
+            if ($request->boolean('aplica_practica', false)) {
+                $valorDescuento = round($valorBaseAfiliacion * 0.50, 2);
+            }
+
+            $saldoAfiliacion = max($valorBaseAfiliacion - $valorDescuento, 0);
+
+            $obligacionAfiliacion = Obligacion::create([
+                'asociado_id' => $asociado->id,
+                'tipo_obligacion_id' => $tipoAfiliacion->id,
+                'periodo_id' => null,
+                'smmlv_id' => $smmlv->id,
+                'numero_obligacion' => 'AFI-' . now()->format('YmdHis') . '-' . $asociado->id,
+                'concepto' => 'Cuota de afiliación',
+                'valor_base' => $valorBaseAfiliacion,
+                'valor_descuento' => $valorDescuento,
+                'valor_recargo' => 0,
+                'saldo_pendiente' => $saldoAfiliacion,
+                'estado' => 'EN_REVISION',
+                'fecha_generacion' => now(),
+                'fecha_vencimiento' => now()->addDays(30)->toDateString(),
+                'observacion' => $request->boolean('aplica_practica', false)
+                    ? 'Afiliación con descuento del 50% por práctica empresarial'
+                    : 'Afiliación equivalente al 5% del SMMLV',
+                'generada_automaticamente' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $archivoRecibo = $request->file('recibo_pago');
+            $rutaRecibo = $archivoRecibo->store('recibos_pago', 'public');
+
+            ReciboPago::create([
+                'asociado_id' => $asociado->id,
+                'obligacion_id' => $obligacionAfiliacion->id,
+                'numero_recibo' => 'REC-' . now()->format('YmdHis') . '-' . random_int(100, 999),
+                'referencia_pago' => $request->referencia_pago,
+                'valor_reportado' => $request->valor_reportado ?? $saldoAfiliacion,
+                'fecha_pago' => $request->fecha_pago ?? now()->toDateString(),
+                'banco' => $request->banco,
+                'observacion_usuario' => $request->observacion_pago,
+                'nombre_archivo' => $archivoRecibo->getClientOriginalName(),
+                'ruta_archivo' => $rutaRecibo,
+                'extension' => $archivoRecibo->getClientOriginalExtension(),
+                'mime_type' => $archivoRecibo->getMimeType(),
+                'peso_bytes' => $archivoRecibo->getSize(),
+                'hash_archivo' => hash_file('sha256', $archivoRecibo->getRealPath()),
+                'estado' => 'PENDIENTE',
+                'cargado_por' => $usuario->id,
+                'fecha_carga' => now(),
             ]);
 
             DB::commit();
 
-            return $this->success([
-                'solicitud_id' => $solicitud->id,
-                'estado' => 'PENDIENTE',
-                'pdf_url' => asset('storage/' . $rutaPdf),
-            ], 'Solicitud enviada correctamente. Queda pendiente de aprobación.', 201);
+            return $this->success(
+                $solicitud->fresh(['usuario', 'asociado', 'archivos']),
+                'Solicitud de afiliación registrada correctamente',
+                201
+            );
         } catch (\Throwable $e) {
             DB::rollBack();
 
-            return $this->error('Error al guardar la solicitud', [
+            return $this->error('Error al registrar la solicitud', [
                 'detalle' => $e->getMessage(),
                 'linea' => $e->getLine(),
                 'archivo' => $e->getFile(),
@@ -245,14 +410,21 @@ class SolicitudAfiliacionController extends BaseApiController
 
         $solicitud->update($request->all());
 
-        return $this->success($solicitud->fresh(), 'Solicitud actualizada correctamente');
+        return $this->success(
+            $solicitud->fresh(),
+            'Solicitud actualizada correctamente'
+        );
     }
 
     public function pendientes(Request $request)
     {
         $estado = $request->get('estado', 'PENDIENTE');
 
-        $solicitudes = SolicitudAfiliacion::with(['usuario', 'asociado', 'archivos'])
+        $solicitudes = SolicitudAfiliacion::with([
+            'usuario',
+            'asociado',
+            'archivos',
+        ])
             ->where('estado', $estado)
             ->orderByDesc('fecha_solicitud')
             ->get()
@@ -266,7 +438,8 @@ class SolicitudAfiliacionController extends BaseApiController
             });
 
         return response()->json([
-            'data' => $solicitudes
+            'success' => true,
+            'data' => $solicitudes,
         ]);
     }
 
@@ -275,7 +448,10 @@ class SolicitudAfiliacionController extends BaseApiController
         DB::beginTransaction();
 
         try {
-            $solicitud = SolicitudAfiliacion::with(['asociado', 'usuario'])->find($id);
+            $solicitud = SolicitudAfiliacion::with([
+                'usuario',
+                'asociado',
+            ])->find($id);
 
             if (!$solicitud) {
                 return $this->error('Solicitud no encontrada', null, 404);
@@ -286,15 +462,10 @@ class SolicitudAfiliacionController extends BaseApiController
             }
 
             $usuario = $solicitud->usuario;
-
-            if (!$usuario) {
-                return $this->error('Usuario no encontrado', null, 404);
-            }
-
             $asociado = $solicitud->asociado;
 
-            if (!$asociado) {
-                return $this->error('Asociado no encontrado', null, 404);
+            if (!$usuario || !$asociado) {
+                return $this->error('Usuario o asociado no encontrado', null, 404);
             }
 
             $passwordPlano = Str::random(10);
@@ -303,81 +474,23 @@ class SolicitudAfiliacionController extends BaseApiController
                 'password_hash' => Hash::make($passwordPlano),
                 'estado_cuenta' => 'ACTIVO',
                 'email_verificado' => 1,
+                'updated_at' => now(),
             ]);
 
             $solicitud->update([
                 'estado' => 'APROBADA',
                 'aprobado_por' => optional($request->user())->id,
                 'fecha_revision' => now(),
+                'observacion_admin' => $request->observacion_admin,
             ]);
 
             $asociado->update([
                 'estado_membresia' => 'ACTIVO',
-                'fecha_afiliacion' => now(),
+                'fecha_afiliacion' => now()->toDateString(),
+                'updated_at' => now(),
             ]);
 
-            // Buscar tipo de obligación SOSTENIMIENTO
-            $tipoSostenimiento = TipoObligacion::where('codigo', 'SOSTENIMIENTO')->first();
-
-            if (!$tipoSostenimiento) {
-                DB::rollBack();
-                return $this->error('No existe el tipo de obligación SOSTENIMIENTO', null, 400);
-            }
-
-            // Buscar SMMLV activo del año actual
-            $anio = now()->year;
-
-            $smmlv = SmmlvHistorico::where('anio', $anio)
-                ->where('activo', 1)
-                ->first();
-
-            if (!$smmlv) {
-                DB::rollBack();
-                return $this->error('No existe SMMLV activo para el año ' . $anio, null, 400);
-            }
-
-            // Buscar periodo mensual actual
-            $periodo = PeriodoCobro::where('anio', $anio)
-                ->where('tipo_periodo', 'MENSUAL')
-                ->whereDate('fecha_inicio', '<=', now())
-                ->whereDate('fecha_fin', '>=', now())
-                ->where('activo', 1)
-                ->first();
-
-            if (!$periodo) {
-                DB::rollBack();
-                return $this->error('No existe periodo mensual activo para la fecha actual', null, 400);
-            }
-
-            // Cálculo: sostenimiento = 1% del SMMLV
-            $valorBase = round($smmlv->valor * 0.01, 2);
-
-            // Evitar duplicar obligación del mismo periodo
-            $yaTieneObligacion = Obligacion::where('asociado_id', $asociado->id)
-                ->where('tipo_obligacion_id', $tipoSostenimiento->id)
-                ->where('periodo_id', $periodo->id)
-                ->whereIn('estado', ['PENDIENTE', 'EN_REVISION', 'VENCIDA'])
-                ->exists();
-
-            if (!$yaTieneObligacion) {
-                Obligacion::create([
-                    'asociado_id' => $asociado->id,
-                    'tipo_obligacion_id' => $tipoSostenimiento->id,
-                    'periodo_id' => $periodo->id,
-                    'smmlv_id' => $smmlv->id,
-                    'numero_obligacion' => 'SOS-' . now()->format('YmdHis') . '-' . $asociado->id,
-                    'concepto' => 'Cuota de sostenimiento - ' . $periodo->nombre,
-                    'valor_base' => $valorBase,
-                    'valor_descuento' => 0,
-                    'valor_recargo' => 0,
-                    'saldo_pendiente' => $valorBase,
-                    'estado' => 'PENDIENTE',
-                    'fecha_generacion' => now(),
-                    'fecha_vencimiento' => $periodo->fecha_fin,
-                    'observacion' => 'Obligación generada automáticamente al aprobar afiliación',
-                    'generada_automaticamente' => 1,
-                ]);
-            }
+            $this->generarSostenimientoInicial($asociado);
 
             Mail::to($usuario->correo)->send(
                 new AfiliacionAprobadaMail($usuario, $passwordPlano)
@@ -405,7 +518,7 @@ class SolicitudAfiliacionController extends BaseApiController
         DB::beginTransaction();
 
         try {
-            $solicitud = SolicitudAfiliacion::with(['usuario'])->find($id);
+            $solicitud = SolicitudAfiliacion::with(['usuario', 'asociado'])->find($id);
 
             if (!$solicitud) {
                 return $this->error('Solicitud no encontrada', null, 404);
@@ -415,35 +528,113 @@ class SolicitudAfiliacionController extends BaseApiController
 
             $solicitud->update([
                 'estado' => 'RECHAZADA',
-                'observacion_admin' => $request->observacion,
+                'observacion_admin' => $request->observacion_admin ?? $request->observacion,
                 'aprobado_por' => optional($request->user())->id,
                 'fecha_revision' => now(),
             ]);
 
-            // 📧 Enviar correo
+            if ($solicitud->asociado) {
+                $solicitud->asociado->update([
+                    'estado_membresia' => 'RECHAZADO',
+                    'updated_at' => now(),
+                ]);
+            }
+
             if ($usuario && $usuario->correo) {
                 Mail::to($usuario->correo)->send(
-                    new AfiliacionRechazadaMail($usuario, $request->observacion)
+                    new AfiliacionRechazadaMail(
+                        $usuario,
+                        $request->observacion_admin ?? $request->observacion
+                    )
                 );
             }
 
             DB::commit();
 
             return $this->success(
-                $solicitud,
+                $solicitud->fresh(),
                 'Solicitud rechazada y correo enviado correctamente'
             );
         } catch (\Throwable $e) {
             DB::rollBack();
 
             return $this->error('Error al rechazar', [
-                'detalle' => $e->getMessage()
+                'detalle' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile(),
             ], 500);
         }
     }
 
-    private function guardarArchivo(Request $request, string $campo, string $tipo, int $solicitudId, int $usuarioId)
+    private function generarSostenimientoInicial(Asociado $asociado): void
     {
+        $tipoSostenimiento = TipoObligacion::where('codigo', 'SOSTENIMIENTO')->first();
+
+        if (!$tipoSostenimiento) {
+            throw new \Exception('No existe el tipo de obligación SOSTENIMIENTO');
+        }
+
+        $anio = now()->year;
+
+        $smmlv = SmmlvHistorico::where('anio', $anio)
+            ->where('activo', 1)
+            ->first();
+
+        if (!$smmlv) {
+            throw new \Exception('No existe SMMLV activo para el año ' . $anio);
+        }
+
+        $periodo = PeriodoCobro::where('anio', $anio)
+            ->where('tipo_periodo', 'MENSUAL')
+            ->whereDate('fecha_inicio', '<=', now())
+            ->whereDate('fecha_fin', '>=', now())
+            ->where('activo', 1)
+            ->first();
+
+        if (!$periodo) {
+            throw new \Exception('No existe periodo mensual activo para la fecha actual');
+        }
+
+        $yaTieneObligacion = Obligacion::where('asociado_id', $asociado->id)
+            ->where('tipo_obligacion_id', $tipoSostenimiento->id)
+            ->where('periodo_id', $periodo->id)
+            ->whereIn('estado', ['PENDIENTE', 'EN_REVISION', 'VENCIDA', 'PAGADA', 'ABONO'])
+            ->exists();
+
+        if ($yaTieneObligacion) {
+            return;
+        }
+
+        $valorBase = round($smmlv->valor * 0.01, 2);
+
+        Obligacion::create([
+            'asociado_id' => $asociado->id,
+            'tipo_obligacion_id' => $tipoSostenimiento->id,
+            'periodo_id' => $periodo->id,
+            'smmlv_id' => $smmlv->id,
+            'numero_obligacion' => 'SOS-' . now()->format('YmdHis') . '-' . $asociado->id,
+            'concepto' => 'Cuota de sostenimiento - ' . $periodo->nombre,
+            'valor_base' => $valorBase,
+            'valor_descuento' => 0,
+            'valor_recargo' => 0,
+            'saldo_pendiente' => $valorBase,
+            'estado' => 'PENDIENTE',
+            'fecha_generacion' => now(),
+            'fecha_vencimiento' => $periodo->fecha_fin,
+            'observacion' => 'Obligación generada automáticamente al aprobar afiliación',
+            'generada_automaticamente' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function guardarArchivo(
+        Request $request,
+        string $campo,
+        string $tipo,
+        int $solicitudId,
+        int $usuarioId
+    ) {
         if (!$request->hasFile($campo)) {
             return null;
         }
@@ -451,7 +642,7 @@ class SolicitudAfiliacionController extends BaseApiController
         $archivo = $request->file($campo);
         $ruta = $archivo->store('afiliaciones/' . strtolower($tipo), 'public');
 
-        ArchivoAdjunto::create([
+        return ArchivoAdjunto::create([
             'modulo' => 'afiliacion',
             'referencia_id' => $solicitudId,
             'tipo_archivo' => $tipo,
@@ -463,54 +654,5 @@ class SolicitudAfiliacionController extends BaseApiController
             'subido_por' => $usuarioId,
             'fecha_subida' => now(),
         ]);
-
-        return $ruta;
-    }
-
-    private function guardarFirmaBase64(string $firmaBase64, int $solicitudId, int $usuarioId)
-    {
-        $firmaBase64 = preg_replace('/^data:image\/\w+;base64,/', '', $firmaBase64);
-        $firmaBase64 = str_replace(' ', '+', $firmaBase64);
-
-        $ruta = 'afiliaciones/firmas/firma_solicitante_' . $solicitudId . '.png';
-
-        Storage::disk('public')->put($ruta, base64_decode($firmaBase64));
-
-        ArchivoAdjunto::create([
-            'modulo' => 'afiliacion',
-            'referencia_id' => $solicitudId,
-            'tipo_archivo' => 'FIRMA_SOLICITANTE',
-            'nombre_original' => 'firma_solicitante_' . $solicitudId . '.png',
-            'ruta_archivo' => $ruta,
-            'extension' => 'png',
-            'mime_type' => 'image/png',
-            'peso_bytes' => Storage::disk('public')->size($ruta),
-            'subido_por' => $usuarioId,
-            'fecha_subida' => now(),
-        ]);
-
-        return $ruta;
-    }
-
-    private function generarPdfAfiliacion(
-        Request $request,
-        Usuario $usuario,
-        Asociado $asociado,
-        SolicitudAfiliacion $solicitud,
-        string $rutaFirma
-    ) {
-        $pdf = Pdf::loadView('pdf.formato_afiliacion', [
-            'request' => $request,
-            'usuario' => $usuario,
-            'asociado' => $asociado,
-            'solicitud' => $solicitud,
-            'firma' => 'data:image/png;base64,' . base64_encode(file_get_contents(storage_path('app/public/' . $rutaFirma))),
-        ])->setPaper('letter');
-
-        $rutaPdf = 'afiliaciones/pdfs/formato_afiliacion_' . $solicitud->id . '.pdf';
-
-        Storage::disk('public')->put($rutaPdf, $pdf->output());
-
-        return $rutaPdf;
     }
 }

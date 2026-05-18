@@ -119,10 +119,15 @@
 
 <body>
 
+    @php
+    $d = $datos ?? [];
+    $beneficiarios = $d['beneficiarios'] ?? [];
+    $firma = $firma ?? null;
+    @endphp
+
     <table>
         <tr>
             <td style="width: 16%; text-align:center;">
-                {{-- Si tienes logo, ponlo en public/logo.png y descomenta --}}
                 {{-- <img src="{{ public_path('logo.png') }}" style="width:55px;"> --}}
             </td>
             <td style="width: 48%;" class="header-title">
@@ -145,15 +150,13 @@
             <td class="label" style="width: 43%;">RADICACIÓN ASEUNICESMAG</td>
         </tr>
         <tr>
+            <td class="center">{{ $d['fecha_solicitud'] ?? '' }}</td>
             <td class="center">
-                {{ $request->fecha_solicitud }}
-            </td>
-            <td class="center">
-                Primera: <span class="box">{{ $request->se_afilia_por_vez == 'Primera' ? 'X' : '' }}</span>
+                Primera: <span class="box">{{ ($d['se_afilia_por_vez'] ?? '') == 'Primera' ? 'X' : '' }}</span>
                 &nbsp;&nbsp;
-                Segunda: <span class="box">{{ $request->se_afilia_por_vez == 'Segunda' ? 'X' : '' }}</span>
+                Segunda: <span class="box">{{ ($d['se_afilia_por_vez'] ?? '') == 'Segunda' ? 'X' : '' }}</span>
             </td>
-            <td class="center">{{ $request->radicacion }}</td>
+            <td class="center">{{ $d['radicacion'] ?? '' }}</td>
         </tr>
     </table>
 
@@ -168,12 +171,12 @@
             <td colspan="2" class="label">GÉNERO</td>
         </tr>
         <tr>
-            <td colspan="3">{{ $request->nombres }} {{ $request->apellidos }}</td>
-            <td class="center">{{ $request->tipo_sangre }}</td>
+            <td colspan="3">{{ $d['nombres'] ?? '' }} {{ $d['apellidos'] ?? '' }}</td>
+            <td class="center">{{ $d['tipo_sangre'] ?? '' }}</td>
             <td colspan="2" class="center">
-                M: <span class="box">{{ $request->genero == 'M' ? 'X' : '' }}</span>
-                F: <span class="box">{{ $request->genero == 'F' ? 'X' : '' }}</span>
-                Otro: <span class="box">{{ $request->genero == 'Otro' ? 'X' : '' }}</span>
+                M: <span class="box">{{ ($d['genero'] ?? '') == 'M' ? 'X' : '' }}</span>
+                F: <span class="box">{{ ($d['genero'] ?? '') == 'F' ? 'X' : '' }}</span>
+                Otro: <span class="box">{{ ($d['genero'] ?? '') == 'Otro' ? 'X' : '' }}</span>
             </td>
         </tr>
 
@@ -184,10 +187,10 @@
             <td colspan="3" class="label">FECHA DE NACIMIENTO</td>
         </tr>
         <tr>
-            <td>{{ $request->numero_documento }}</td>
-            <td>{{ $request->fecha_expedicion }}</td>
-            <td>{{ $request->lugar_expedicion }}</td>
-            <td colspan="3">{{ $request->fecha_nacimiento }}</td>
+            <td>{{ $d['numero_documento'] ?? '' }}</td>
+            <td>{{ $d['fecha_expedicion'] ?? '' }}</td>
+            <td>{{ $d['lugar_expedicion'] ?? '' }}</td>
+            <td colspan="3">{{ $d['fecha_nacimiento'] ?? '' }}</td>
         </tr>
 
         <tr>
@@ -196,9 +199,9 @@
             <td colspan="3" class="label">CORREO ELECTRÓNICO</td>
         </tr>
         <tr>
-            <td colspan="2">{{ $request->direccion }}</td>
-            <td>{{ $request->telefono }}</td>
-            <td colspan="3">{{ $request->correo }}</td>
+            <td colspan="2">{{ $d['direccion'] ?? '' }}</td>
+            <td>{{ $d['telefono'] ?? '' }}</td>
+            <td colspan="3">{{ $d['correo'] ?? '' }}</td>
         </tr>
 
         <tr>
@@ -208,19 +211,19 @@
         </tr>
         <tr>
             <td>
-                Tec. <span class="box">{{ $request->nivel_educativo == 'Tecnico' ? 'X' : '' }}</span>
-                Prof. <span class="box">{{ $request->nivel_educativo == 'Profesional' ? 'X' : '' }}</span>
-                Doc. <span class="box">{{ $request->nivel_educativo == 'Doctorado' ? 'X' : '' }}</span><br>
-                Esp. <span class="box">{{ $request->nivel_educativo == 'Especializacion' ? 'X' : '' }}</span>
-                Mag. <span class="box">{{ $request->nivel_educativo == 'Magister' ? 'X' : '' }}</span>
+                Tec. <span class="box">{{ ($d['nivel_educativo'] ?? '') == 'Tecnico' ? 'X' : '' }}</span>
+                Prof. <span class="box">{{ ($d['nivel_educativo'] ?? '') == 'Profesional' ? 'X' : '' }}</span>
+                Doc. <span class="box">{{ ($d['nivel_educativo'] ?? '') == 'Doctorado' ? 'X' : '' }}</span><br>
+                Esp. <span class="box">{{ ($d['nivel_educativo'] ?? '') == 'Especializacion' ? 'X' : '' }}</span>
+                Mag. <span class="box">{{ ($d['nivel_educativo'] ?? '') == 'Magister' ? 'X' : '' }}</span>
             </td>
-            <td colspan="2">{{ $request->titulo_obtenido }}</td>
+            <td colspan="2">{{ $d['titulo_obtenido'] ?? '' }}</td>
             <td colspan="3" class="small">
-                Dependiente <span class="box">{{ $request->ocupacion == 'Dependiente' ? 'X' : '' }}</span>
-                Independiente <span class="box">{{ $request->ocupacion == 'Independiente' ? 'X' : '' }}</span>
-                Empleado <span class="box">{{ $request->ocupacion == 'Empleado' ? 'X' : '' }}</span>
-                Hogar <span class="box">{{ $request->ocupacion == 'Hogar' ? 'X' : '' }}</span>
-                Pensionado <span class="box">{{ $request->ocupacion == 'Pensionado' ? 'X' : '' }}</span>
+                Dependiente <span class="box">{{ ($d['ocupacion'] ?? '') == 'Dependiente' ? 'X' : '' }}</span>
+                Independiente <span class="box">{{ ($d['ocupacion'] ?? '') == 'Independiente' ? 'X' : '' }}</span>
+                Empleado <span class="box">{{ ($d['ocupacion'] ?? '') == 'Empleado' ? 'X' : '' }}</span>
+                Hogar <span class="box">{{ ($d['ocupacion'] ?? '') == 'Hogar' ? 'X' : '' }}</span>
+                Pensionado <span class="box">{{ ($d['ocupacion'] ?? '') == 'Pensionado' ? 'X' : '' }}</span>
             </td>
         </tr>
 
@@ -229,8 +232,8 @@
             <td colspan="3" class="label">FECHA DE VINCULACIÓN</td>
         </tr>
         <tr>
-            <td colspan="3">{{ $request->empresa }}</td>
-            <td colspan="3">{{ $request->fecha_vinculacion }}</td>
+            <td colspan="3">{{ $d['empresa'] ?? '' }}</td>
+            <td colspan="3">{{ $d['fecha_vinculacion'] ?? '' }}</td>
         </tr>
 
         <tr>
@@ -239,14 +242,14 @@
             <td colspan="3" class="label">ESTADO CIVIL</td>
         </tr>
         <tr>
-            <td colspan="2">{{ $request->cargo }}</td>
-            <td>{{ $request->telefono_empresa }}</td>
+            <td colspan="2">{{ $d['cargo'] ?? '' }}</td>
+            <td>{{ $d['telefono_empresa'] ?? '' }}</td>
             <td colspan="3" class="small">
-                Soltero(a) <span class="box">{{ $request->estado_civil == 'Soltero(a)' ? 'X' : '' }}</span>
-                Casado(a) <span class="box">{{ $request->estado_civil == 'Casado(a)' ? 'X' : '' }}</span>
-                Unión Libre <span class="box">{{ $request->estado_civil == 'Unión Libre' ? 'X' : '' }}</span>
-                Viudo(a) <span class="box">{{ $request->estado_civil == 'Viudo(a)' ? 'X' : '' }}</span>
-                Divorciado(a) <span class="box">{{ $request->estado_civil == 'Divorciado(a)' ? 'X' : '' }}</span>
+                Soltero(a) <span class="box">{{ ($d['estado_civil'] ?? '') == 'Soltero(a)' ? 'X' : '' }}</span>
+                Casado(a) <span class="box">{{ ($d['estado_civil'] ?? '') == 'Casado(a)' ? 'X' : '' }}</span>
+                Unión Libre <span class="box">{{ ($d['estado_civil'] ?? '') == 'Unión Libre' ? 'X' : '' }}</span>
+                Viudo(a) <span class="box">{{ ($d['estado_civil'] ?? '') == 'Viudo(a)' ? 'X' : '' }}</span>
+                Divorciado(a) <span class="box">{{ ($d['estado_civil'] ?? '') == 'Divorciado(a)' ? 'X' : '' }}</span>
             </td>
         </tr>
 
@@ -259,12 +262,12 @@
             <td class="label">Edad 18-25</td>
         </tr>
         <tr>
-            <td>{{ $request->personas_a_cargo }}</td>
-            <td>{{ $request->numero_hijos }}</td>
-            <td>{{ $request->hijos_0_5 }}</td>
-            <td>{{ $request->hijos_6_11 }}</td>
-            <td>{{ $request->hijos_12_17 }}</td>
-            <td>{{ $request->hijos_18_25 }}</td>
+            <td>{{ $d['personas_a_cargo'] ?? '' }}</td>
+            <td>{{ $d['numero_hijos'] ?? '' }}</td>
+            <td>{{ $d['hijos_0_5'] ?? '' }}</td>
+            <td>{{ $d['hijos_6_11'] ?? '' }}</td>
+            <td>{{ $d['hijos_12_17'] ?? '' }}</td>
+            <td>{{ $d['hijos_18_25'] ?? '' }}</td>
         </tr>
 
         <tr>
@@ -273,13 +276,13 @@
         </tr>
         <tr>
             <td colspan="3" class="center">
-                Propia <span class="box">{{ $request->tipo_vivienda == 'Propia' ? 'X' : '' }}</span>
-                Arriendo <span class="box">{{ $request->tipo_vivienda == 'Arriendo' ? 'X' : '' }}</span>
-                Familiar <span class="box">{{ $request->tipo_vivienda == 'Familiar' ? 'X' : '' }}</span>
+                Propia <span class="box">{{ ($d['tipo_vivienda'] ?? '') == 'Propia' ? 'X' : '' }}</span>
+                Arriendo <span class="box">{{ ($d['tipo_vivienda'] ?? '') == 'Arriendo' ? 'X' : '' }}</span>
+                Familiar <span class="box">{{ ($d['tipo_vivienda'] ?? '') == 'Familiar' ? 'X' : '' }}</span>
             </td>
             <td colspan="3" class="center">
-                Rural <span class="box">{{ $request->zona_ubicacion == 'Rural' ? 'X' : '' }}</span>
-                Urbana <span class="box">{{ $request->zona_ubicacion == 'Urbana' ? 'X' : '' }}</span>
+                Rural <span class="box">{{ ($d['zona_ubicacion'] ?? '') == 'Rural' ? 'X' : '' }}</span>
+                Urbana <span class="box">{{ ($d['zona_ubicacion'] ?? '') == 'Urbana' ? 'X' : '' }}</span>
             </td>
         </tr>
     </table>
@@ -293,10 +296,6 @@
             <td class="label" style="width: 56%;">APELLIDOS Y NOMBRES</td>
             <td class="label" style="width: 22%;">PARENTESCO</td>
         </tr>
-
-        @php
-        $beneficiarios = $request->beneficiarios ?? [];
-        @endphp
 
         @for($i = 0; $i < 4; $i++)
             <tr>
@@ -317,7 +316,7 @@
             </td>
         </tr>
         <tr>
-            <td class="motivation">{{ $request->motivacion_afiliacion }}</td>
+            <td class="motivation">{{ $d['motivacion_afiliacion'] ?? '' }}</td>
         </tr>
     </table>
 
@@ -356,7 +355,7 @@
             <td class="label">CUOTA DE AFILIACIÓN (PAGO ÚNICO)</td>
         </tr>
         <tr>
-            <td style="height: 35px;">{{ $request->referido_por }}</td>
+            <td style="height: 35px;">{{ $d['referido_por'] ?? '' }}</td>
             <td class="center">
                 <strong style="font-size:14px;">$ 87.000</strong><br>
                 <span class="small">
@@ -372,7 +371,7 @@
                 @else
                 _______________________________<br>
                 @endif
-                FIRMA DEL SOLICITANTE C.C. {{ $request->numero_documento }}
+                FIRMA DEL SOLICITANTE C.C. {{ $d['numero_documento'] ?? '' }}
             </td>
         </tr>
     </table>
@@ -399,9 +398,9 @@
                 _______________________
                 @endif
                 <br>
-                <strong>C.C.:</strong> {{ $request->numero_documento }}
+                <strong>C.C.:</strong> {{ $d['numero_documento'] ?? '' }}
                 &nbsp;&nbsp;&nbsp;
-                <strong>Fecha:</strong> {{ $request->fecha_solicitud }}
+                <strong>Fecha:</strong> {{ $d['fecha_solicitud'] ?? '' }}
             </td>
         </tr>
         <tr>

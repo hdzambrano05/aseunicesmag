@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import BeneficiariosForm from "./BeneficiariosForm";
-import Navbar from "../../../components/Navbar";
+import Navbar from "../../components/Navbar";
 import FirmaForm from "./FirmaForm";
 
 const pasos = [

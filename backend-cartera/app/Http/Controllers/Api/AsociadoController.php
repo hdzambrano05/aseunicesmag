@@ -13,6 +13,8 @@ class AsociadoController extends BaseApiController
             'usuario.rol',
             'ciudad',
             'referidoPor.usuario',
+            'obligaciones.tipoObligacion',
+            'recibosPago',
         ]);
 
         if ($request->filled('buscar')) {
@@ -20,13 +22,13 @@ class AsociadoController extends BaseApiController
 
             $query->where(function ($q) use ($buscar) {
                 $q->where('codigo_asociado', 'like', "%{$buscar}%")
-                  ->orWhere('estado_membresia', 'like', "%{$buscar}%")
-                  ->orWhereHas('usuario', function ($uq) use ($buscar) {
-                      $uq->where('nombres', 'like', "%{$buscar}%")
-                         ->orWhere('apellidos', 'like', "%{$buscar}%")
-                         ->orWhere('correo', 'like', "%{$buscar}%")
-                         ->orWhere('numero_documento', 'like', "%{$buscar}%");
-                  });
+                    ->orWhere('estado_membresia', 'like', "%{$buscar}%")
+                    ->orWhereHas('usuario', function ($uq) use ($buscar) {
+                        $uq->where('nombres', 'like', "%{$buscar}%")
+                            ->orWhere('apellidos', 'like', "%{$buscar}%")
+                            ->orWhere('correo', 'like', "%{$buscar}%")
+                            ->orWhere('numero_documento', 'like', "%{$buscar}%");
+                    });
             });
         }
 
@@ -48,6 +50,8 @@ class AsociadoController extends BaseApiController
             'historialEstados.usuario',
             'obligaciones.tipoObligacion',
             'obligaciones.periodo',
+            'obligaciones.recibosPago',
+            'recibosPago.obligacion.tipoObligacion',
         ])->find($id);
 
         if (!$asociado) {
@@ -61,18 +65,39 @@ class AsociadoController extends BaseApiController
     {
         $usuario = $request->user();
 
+        if (!$usuario) {
+            return $this->error('Usuario no autenticado', null, 401);
+        }
+
         $asociado = Asociado::with([
             'usuario.rol',
             'ciudad',
             'obligaciones.tipoObligacion',
             'obligaciones.periodo',
-            'recibosPago',
-        ])->where('usuario_id', $usuario->id)->first();
+            'obligaciones.smmlv',
+            'obligaciones.recibosPago',
+            'recibosPago.obligacion.tipoObligacion',
+            'recibosPago.aprobadoPor',
+        ])
+            ->where('usuario_id', $usuario->id)
+            ->first();
 
         if (!$asociado) {
             return $this->error('El usuario no tiene asociado relacionado', null, 404);
         }
 
-        return $this->success($asociado, 'Perfil del asociado');
+        $obligacionesPendientes = $asociado->obligaciones
+            ->whereIn('estado', ['PENDIENTE', 'VENCIDA', 'ABONO'])
+            ->where('saldo_pendiente', '>', 0)
+            ->values();
+
+        $totalPendiente = $obligacionesPendientes->sum('saldo_pendiente');
+
+        $data = $asociado->toArray();
+        $data['tiene_deuda'] = $totalPendiente > 0;
+        $data['total_pendiente'] = $totalPendiente;
+        $data['obligaciones_pendientes'] = $obligacionesPendientes;
+
+        return $this->success($data, 'Perfil del asociado');
     }
 }

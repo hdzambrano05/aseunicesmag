@@ -36,11 +36,14 @@ type Solicitud = {
 };
 
 const TIPOS_DOCUMENTOS = [
+  { tipo: "COPIA_CEDULA", label: "Ver Cédula", icon: FileText },
   { tipo: "DIPLOMA", label: "Ver Diploma", icon: Eye },
-  { tipo: "RECIBO_PAGO", label: "Ver Recibo", icon: FileText },
-  { tipo: "CEDULA", label: "Ver Cédula", icon: FileText },
-  { tipo: "FOTO", label: "Ver Foto", icon: Eye },
-  { tipo: "FORMATO_AFILIACION", label: "Ver Formato", icon: FileText },
+  { tipo: "FOTO_DIGITAL", label: "Ver Foto", icon: Eye },
+  {
+    tipo: "FORMULARIO_AFILIACION",
+    label: "Ver Formulario",
+    icon: FileText,
+  },
 ];
 
 export default function DashboardAdmin() {
@@ -83,12 +86,16 @@ export default function DashboardAdmin() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "No se pudieron cargar las solicitudes.");
+        throw new Error(
+          data.message || "No se pudieron cargar las solicitudes.",
+        );
       }
 
       setSolicitudes(data.data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar solicitudes.");
+      setError(
+        err instanceof Error ? err.message : "Error al cargar solicitudes.",
+      );
     } finally {
       setLoading(false);
     }
@@ -126,7 +133,9 @@ export default function DashboardAdmin() {
       setMensaje("Afiliación aprobada correctamente.");
       await cargarSolicitudes();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al aprobar la solicitud.");
+      setError(
+        err instanceof Error ? err.message : "Error al aprobar la solicitud.",
+      );
     } finally {
       setProcesandoId(null);
     }
@@ -169,7 +178,9 @@ export default function DashboardAdmin() {
       setMensaje("Afiliación rechazada correctamente.");
       await cargarSolicitudes();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al rechazar la solicitud.");
+      setError(
+        err instanceof Error ? err.message : "Error al rechazar la solicitud.",
+      );
     } finally {
       setProcesandoId(null);
     }
@@ -201,154 +212,282 @@ export default function DashboardAdmin() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-6 py-8">
-      <section className="mx-auto max-w-7xl">
-        <div className="mb-7 flex flex-col justify-between gap-4 rounded-3xl border border-slate-200 bg-white px-6 py-6 shadow-sm md:flex-row md:items-center">
-          <div>
-            <span className="mb-2 inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-blue-700">
-              Panel administrativo
-            </span>
+    <main className="min-h-screen bg-[#f4f6f8] px-3 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-6">
+      <section className="mx-auto max-w-7xl space-y-5">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="relative border-b border-slate-200 px-5 py-5 sm:px-6 lg:px-7">
+            <div className="absolute inset-y-0 left-0 w-1.5 bg-[#1d4ed8]" />
 
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-              Verificación de Nuevos Afiliados
-            </h1>
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-blue-700 sm:text-[11px]">
+                  Panel administrativo
+                </p>
 
-            <p className="mt-2 text-sm text-slate-500">
-              Revisa los documentos, aprueba solicitudes o solicita correcciones
-              a cada afiliado.
-            </p>
+                <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-800 sm:text-3xl">
+                  Verificación de Afiliaciones
+                </h1>
+
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                  Administra las solicitudes de afiliación, revisa documentos y
+                  aprueba nuevos asociados.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={cargarSolicitudes}
+                disabled={loading}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1e3a8a] px-5 text-sm font-black text-white transition hover:bg-[#172554] disabled:cursor-not-allowed disabled:bg-slate-400"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                Actualizar
+              </button>
+            </div>
           </div>
-
-          <button
-            type="button"
-            onClick={cargarSolicitudes}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            Actualizar
-          </button>
         </div>
 
         {mensaje && (
-          <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700">
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-700">
             {mensaje}
           </div>
         )}
 
         {error && (
-          <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
             {error}
           </div>
         )}
 
         {loading ? (
-          <div className="flex min-h-[280px] items-center justify-center rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex flex-col items-center gap-3 text-slate-500">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-              <p className="text-sm font-bold">Cargando solicitudes...</p>
+          <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-[#1e3a8a]" />
+
+              <p className="text-sm font-bold text-slate-500">
+                Cargando solicitudes...
+              </p>
             </div>
           </div>
         ) : solicitudes.length === 0 ? (
-          <div className="flex min-h-[280px] items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white shadow-sm">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <div className="rounded-full bg-slate-100 p-4">
+          <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white shadow-sm">
+            <div className="flex max-w-md flex-col items-center text-center">
+              <div className="rounded-2xl bg-slate-100 p-4">
                 <Inbox className="h-8 w-8 text-slate-400" />
               </div>
-              <h2 className="text-lg font-black text-slate-800">
+
+              <h2 className="mt-5 text-xl font-black text-slate-800">
                 No hay solicitudes pendientes
               </h2>
-              <p className="max-w-md text-sm text-slate-500">
-                Cuando un usuario complete su proceso de afiliación aparecerá en
-                esta sección.
+
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Cuando un usuario complete el formulario de afiliación aparecerá
+                automáticamente en esta sección.
               </p>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {solicitudes.map((solicitud) => (
               <article
                 key={solicitud.id}
-                className="group rounded-3xl border border-blue-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xl"
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300"
               >
-                <div className="grid gap-5 lg:grid-cols-[1fr_auto_auto] lg:items-center">
-                  <div>
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <h3 className="text-base font-black text-blue-700">
-                        {solicitud.usuario?.nombres}{" "}
-                        {solicitud.usuario?.apellidos}
-                      </h3>
+                <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-lg font-black text-slate-800">
+                          {solicitud.usuario?.nombres}{" "}
+                          {solicitud.usuario?.apellidos}
+                        </h2>
 
-                      <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-200">
-                        {solicitud.estado}
-                      </span>
+                        <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
+                          {solicitud.estado}
+                        </span>
+                      </div>
+
+                      <p className="mt-2 text-sm font-semibold text-slate-500">
+                        Documento: {solicitud.usuario?.numero_documento}
+                      </p>
+
+                      <p className="mt-1 text-sm text-slate-500">
+                        {solicitud.usuario?.correo}
+                      </p>
+
+                      {solicitud.usuario?.telefono && (
+                        <p className="mt-1 text-sm text-slate-500">
+                          Teléfono: {solicitud.usuario.telefono}
+                        </p>
+                      )}
+
+                      <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Fecha solicitud:{" "}
+                        {formatearFecha(solicitud.fecha_solicitud)}
+                      </p>
                     </div>
 
-                    <p className="text-sm font-semibold text-slate-500">
-                      CC {solicitud.usuario?.numero_documento} ·{" "}
-                      {solicitud.usuario?.correo}
-                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => aprobar(solicitud.id)}
+                        disabled={procesandoId === solicitud.id}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1e3a8a] px-5 text-sm font-black text-white transition hover:bg-[#172554] disabled:cursor-not-allowed disabled:bg-slate-400"
+                      >
+                        {procesandoId === solicitud.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                        Aprobar
+                      </button>
 
-                    <p className="mt-1 text-xs font-medium text-slate-400">
-                      Fecha de solicitud:{" "}
-                      {formatearFecha(solicitud.fecha_solicitud)}
-                    </p>
+                      <button
+                        type="button"
+                        onClick={() => rechazar(solicitud.id)}
+                        disabled={procesandoId === solicitud.id}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 text-sm font-black text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <X className="h-4 w-4" />
+                        Rechazar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[1fr_340px]">
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+                      Información del afiliado
+                    </h3>
+
+                    <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
+                      <div className="grid border-b border-slate-200 bg-slate-50 px-5 py-4 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                            Nombres
+                          </p>
+
+                          <p className="mt-1 text-sm font-bold text-slate-800">
+                            {solicitud.usuario?.nombres}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 sm:mt-0">
+                          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                            Apellidos
+                          </p>
+
+                          <p className="mt-1 text-sm font-bold text-slate-800">
+                            {solicitud.usuario?.apellidos}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid border-b border-slate-200 px-5 py-4 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                            Documento
+                          </p>
+
+                          <p className="mt-1 text-sm font-bold text-slate-800">
+                            {solicitud.usuario?.numero_documento}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 sm:mt-0">
+                          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                            Correo electrónico
+                          </p>
+
+                          <p className="mt-1 break-all text-sm font-semibold text-slate-700">
+                            {solicitud.usuario?.correo}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid px-5 py-4 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                            Teléfono
+                          </p>
+
+                          <p className="mt-1 text-sm font-semibold text-slate-700">
+                            {solicitud.usuario?.telefono || "No registra"}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 sm:mt-0">
+                          <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                            Estado membresía
+                          </p>
+
+                          <p className="mt-1 text-sm font-bold text-slate-800">
+                            {solicitud.asociado?.estado_membresia ||
+                              "Pendiente"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    {TIPOS_DOCUMENTOS.map((doc) => {
-                      const archivo = obtenerArchivo(
-                        solicitud.archivos,
-                        doc.tipo,
-                      );
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+                      Documentos adjuntos
+                    </h3>
 
-                      if (!archivo) return null;
+                    <div className="mt-4 space-y-3">
+                      {TIPOS_DOCUMENTOS.map((doc) => {
+                        const archivo = obtenerArchivo(
+                          solicitud.archivos,
+                          doc.tipo,
+                        );
 
-                      const Icon = doc.icon;
+                        const Icon = doc.icon;
 
-                      return (
-                        <a
-                          key={doc.tipo}
-                          href={archivo.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-700 transition hover:border-blue-600 hover:bg-blue-50"
-                        >
-                          <Icon className="h-4 w-4" />
-                          {doc.label}
-                        </a>
-                      );
-                    })}
-                  </div>
+                        return (
+                          <div
+                            key={doc.tipo}
+                            className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="rounded-xl bg-white p-2 shadow-sm">
+                                <Icon className="h-5 w-5 text-[#1e3a8a]" />
+                              </div>
 
-                  <div className="flex flex-wrap gap-2 lg:justify-end">
-                    <button
-                      type="button"
-                      onClick={() => aprobar(solicitud.id)}
-                      disabled={procesandoId === solicitud.id}
-                      className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-black text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {procesandoId === solicitud.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Check className="h-4 w-4" />
-                      )}
-                      Aceptar
-                    </button>
+                              <div>
+                                <p className="text-sm font-black text-slate-800">
+                                  {doc.label.replace("Ver ", "")}
+                                </p>
 
-                    <button
-                      type="button"
-                      onClick={() => rechazar(solicitud.id)}
-                      disabled={procesandoId === solicitud.id}
-                      className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-black text-blue-700 transition hover:border-red-300 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <X className="h-4 w-4" />
-                      Rechazar
-                    </button>
+                                <p className="text-xs text-slate-500">
+                                  Documento cargado
+                                </p>
+                              </div>
+                            </div>
+
+                            {archivo ? (
+                              <a
+                                href={archivo.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded-lg bg-[#1e3a8a] px-4 py-2 text-xs font-black text-white transition hover:bg-[#172554]"
+                              >
+                                Ver
+                              </a>
+                            ) : (
+                              <span className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+                                No cargado
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </article>

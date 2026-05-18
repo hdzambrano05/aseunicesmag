@@ -8,7 +8,6 @@ use App\Models\Obligacion;
 use App\Models\ReciboPago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ReciboPagoController extends BaseApiController
@@ -18,6 +17,7 @@ class ReciboPagoController extends BaseApiController
         $query = ReciboPago::with([
             'asociado.usuario',
             'obligacion.tipoObligacion',
+            'obligacion.periodo',
             'cargadoPor',
             'aprobadoPor',
         ]);
@@ -30,14 +30,26 @@ class ReciboPagoController extends BaseApiController
             $query->where('asociado_id', $request->asociado_id);
         }
 
-        $recibos = $query->orderByDesc('fecha_carga')->paginate(10);
+        if ($request->filled('obligacion_id')) {
+            $query->where('obligacion_id', $request->obligacion_id);
+        }
+
+        $recibos = $query
+            ->orderByDesc('fecha_carga')
+            ->paginate($request->get('per_page', 10));
 
         return $this->success($recibos, 'Listado de recibos');
     }
 
     public function misRecibos(Request $request)
     {
-        $asociado = Asociado::where('usuario_id', $request->user()->id)->first();
+        $usuario = $request->user();
+
+        if (!$usuario) {
+            return $this->error('Usuario no autenticado', null, 401);
+        }
+
+        $asociado = Asociado::where('usuario_id', $usuario->id)->first();
 
         if (!$asociado) {
             return $this->error('Asociado no encontrado', null, 404);
@@ -45,6 +57,7 @@ class ReciboPagoController extends BaseApiController
 
         $recibos = ReciboPago::with([
             'obligacion.tipoObligacion',
+            'obligacion.periodo',
             'aprobadoPor',
         ])
             ->where('asociado_id', $asociado->id)
@@ -58,8 +71,8 @@ class ReciboPagoController extends BaseApiController
     {
         $validator = Validator::make($request->all(), [
             'obligacion_id' => 'required|exists:obligaciones,id',
-            'referencia_pago' => 'required|string|max:100',
-            'valor_reportado' => 'nullable|numeric|min:0',
+            'referencia_pago' => 'nullable|string|max:100',
+            'valor_reportado' => 'required|numeric|min:1',
             'fecha_pago' => 'nullable|date',
             'banco' => 'nullable|string|max:100',
             'observacion_usuario' => 'nullable|string',
@@ -71,56 +84,108 @@ class ReciboPagoController extends BaseApiController
         }
 
         $usuario = $request->user();
+
+        if (!$usuario) {
+            return $this->error('Usuario no autenticado', null, 401);
+        }
+
         $asociado = Asociado::where('usuario_id', $usuario->id)->first();
 
         if (!$asociado) {
             return $this->error('El usuario no tiene asociado relacionado', null, 404);
         }
 
-        $obligacion = Obligacion::find($request->obligacion_id);
+        DB::beginTransaction();
 
-        if (!$obligacion || $obligacion->asociado_id !== $asociado->id) {
-            return $this->error('La obligación no pertenece al asociado autenticado', null, 403);
+        try {
+            $obligacion = Obligacion::lockForUpdate()->find($request->obligacion_id);
+
+            if (!$obligacion || intval($obligacion->asociado_id) !== intval($asociado->id)) {
+                DB::rollBack();
+                return $this->error('La obligación no pertenece al asociado autenticado', null, 403);
+            }
+
+            if ($obligacion->estado === 'PAGADA') {
+                DB::rollBack();
+                return $this->error('Esta obligación ya se encuentra pagada', null, 409);
+            }
+
+            if ($obligacion->estado === 'EN_REVISION') {
+                DB::rollBack();
+                return $this->error('Esta obligación ya tiene un recibo pendiente de revisión', null, 409);
+            }
+
+            $reciboPendiente = ReciboPago::where('obligacion_id', $obligacion->id)
+                ->whereIn('estado', ['PENDIENTE', 'APROBADO'])
+                ->exists();
+
+            if ($reciboPendiente) {
+                DB::rollBack();
+                return $this->error('Esta obligación ya tiene un recibo cargado', null, 409);
+            }
+
+            $archivo = $request->file('archivo');
+            $ruta = $archivo->store('recibos_pago', 'public');
+
+            $recibo = ReciboPago::create([
+                'asociado_id' => $asociado->id,
+                'obligacion_id' => $obligacion->id,
+                'numero_recibo' => 'REC-' . now()->format('YmdHis') . '-' . random_int(100, 999),
+                'referencia_pago' => $request->referencia_pago,
+                'valor_reportado' => $request->valor_reportado,
+                'fecha_pago' => $request->fecha_pago ?? now()->toDateString(),
+                'banco' => $request->banco,
+                'observacion_usuario' => $request->observacion_usuario,
+                'nombre_archivo' => $archivo->getClientOriginalName(),
+                'ruta_archivo' => $ruta,
+                'extension' => $archivo->getClientOriginalExtension(),
+                'mime_type' => $archivo->getMimeType(),
+                'peso_bytes' => $archivo->getSize(),
+                'hash_archivo' => hash_file('sha256', $archivo->getRealPath()),
+                'estado' => 'PENDIENTE',
+                'cargado_por' => $usuario->id,
+                'fecha_carga' => now(),
+            ]);
+
+            $obligacion->update([
+                'estado' => 'EN_REVISION',
+                'updated_at' => now(),
+            ]);
+
+            Auditoria::create([
+                'usuario_id' => $usuario->id,
+                'modulo' => 'RECIBOS_PAGO',
+                'accion' => 'CREAR',
+                'entidad' => 'recibos_pago',
+                'entidad_id' => $recibo->id,
+                'descripcion' => 'Carga de recibo de pago',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'datos_antes' => null,
+                'datos_despues' => json_encode($recibo->toArray(), JSON_UNESCAPED_UNICODE),
+                'fecha_evento' => now(),
+            ]);
+
+            DB::commit();
+
+            return $this->success(
+                $recibo->fresh([
+                    'asociado.usuario',
+                    'obligacion.tipoObligacion',
+                    'cargadoPor',
+                ]),
+                'Recibo cargado correctamente. Queda pendiente de revisión.',
+                201
+            );
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return $this->error('Error al cargar el recibo', [
+                'detalle' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile(),
+            ], 500);
         }
-
-        $archivo = $request->file('archivo');
-        $ruta = $archivo->store('recibos_pago', 'public');
-
-        $recibo = ReciboPago::create([
-            'asociado_id' => $asociado->id,
-            'obligacion_id' => $request->obligacion_id,
-            'numero_recibo' => 'REC-' . now()->format('YmdHis') . '-' . random_int(100, 999),
-            'referencia_pago' => $request->referencia_pago,
-            'valor_reportado' => $request->valor_reportado,
-            'fecha_pago' => $request->fecha_pago,
-            'banco' => $request->banco,
-            'observacion_usuario' => $request->observacion_usuario,
-            'nombre_archivo' => $archivo->getClientOriginalName(),
-            'ruta_archivo' => $ruta,
-            'extension' => $archivo->getClientOriginalExtension(),
-            'mime_type' => $archivo->getMimeType(),
-            'peso_bytes' => $archivo->getSize(),
-            'hash_archivo' => hash_file('sha256', $archivo->getRealPath()),
-            'estado' => 'PENDIENTE',
-            'cargado_por' => $usuario->id,
-            'fecha_carga' => now(),
-        ]);
-
-        Auditoria::create([
-            'usuario_id' => $usuario->id,
-            'modulo' => 'RECIBOS_PAGO',
-            'accion' => 'CREAR',
-            'entidad' => 'recibos_pago',
-            'entidad_id' => $recibo->id,
-            'descripcion' => 'Carga de recibo de pago',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'datos_antes' => null,
-            'datos_despues' => json_encode($recibo->toArray(), JSON_UNESCAPED_UNICODE),
-            'fecha_evento' => now(),
-        ]);
-
-        return $this->success($recibo, 'Recibo cargado correctamente', 201);
     }
 
     public function show(int $id)
@@ -142,17 +207,40 @@ class ReciboPagoController extends BaseApiController
 
     public function aprobar(Request $request, int $id)
     {
+        $validator = Validator::make($request->all(), [
+            'observacion_admin' => 'nullable|string|max:2000',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error('Datos inválidos', $validator->errors(), 422);
+        }
+
+        $usuario = $request->user();
+
+        if (!$usuario) {
+            return $this->error('Usuario no autenticado', null, 401);
+        }
+
         DB::beginTransaction();
 
         try {
-            $recibo = ReciboPago::with('obligacion')->find($id);
+            $recibo = ReciboPago::with('obligacion')
+                ->lockForUpdate()
+                ->find($id);
 
             if (!$recibo) {
+                DB::rollBack();
                 return $this->error('Recibo no encontrado', null, 404);
             }
 
             if ($recibo->estado === 'APROBADO') {
+                DB::rollBack();
                 return $this->error('El recibo ya fue aprobado', null, 409);
+            }
+
+            if ($recibo->estado === 'RECHAZADO') {
+                DB::rollBack();
+                return $this->error('El recibo ya fue rechazado', null, 409);
             }
 
             $antes = $recibo->toArray();
@@ -160,19 +248,24 @@ class ReciboPagoController extends BaseApiController
             $recibo->update([
                 'estado' => 'APROBADO',
                 'observacion_admin' => $request->observacion_admin,
-                'aprobado_por' => $request->user()->id,
+                'aprobado_por' => $usuario->id,
                 'fecha_revision' => now(),
             ]);
 
             if ($recibo->obligacion) {
+                $valorPagado = floatval($recibo->valor_reportado);
+                $saldoActual = floatval($recibo->obligacion->saldo_pendiente);
+                $nuevoSaldo = max($saldoActual - $valorPagado, 0);
+
                 $recibo->obligacion->update([
-                    'estado' => 'PAGADA',
-                    'saldo_pendiente' => 0,
+                    'saldo_pendiente' => $nuevoSaldo,
+                    'estado' => $nuevoSaldo <= 0 ? 'PAGADA' : 'ABONO',
+                    'updated_at' => now(),
                 ]);
             }
 
             Auditoria::create([
-                'usuario_id' => $request->user()->id,
+                'usuario_id' => $usuario->id,
                 'modulo' => 'RECIBOS_PAGO',
                 'accion' => 'APROBAR',
                 'entidad' => 'recibos_pago',
@@ -187,10 +280,22 @@ class ReciboPagoController extends BaseApiController
 
             DB::commit();
 
-            return $this->success($recibo->fresh(), 'Recibo aprobado correctamente');
+            return $this->success(
+                $recibo->fresh([
+                    'asociado.usuario',
+                    'obligacion.tipoObligacion',
+                    'aprobadoPor',
+                ]),
+                'Recibo aprobado correctamente'
+            );
         } catch (\Throwable $e) {
             DB::rollBack();
-            return $this->error('Error al aprobar el recibo', $e->getMessage(), 500);
+
+            return $this->error('Error al aprobar el recibo', [
+                'detalle' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile(),
+            ], 500);
         }
     }
 
@@ -204,36 +309,83 @@ class ReciboPagoController extends BaseApiController
             return $this->error('Debe indicar el motivo del rechazo', $validator->errors(), 422);
         }
 
-        $recibo = ReciboPago::find($id);
+        $usuario = $request->user();
 
-        if (!$recibo) {
-            return $this->error('Recibo no encontrado', null, 404);
+        if (!$usuario) {
+            return $this->error('Usuario no autenticado', null, 401);
         }
 
-        $antes = $recibo->toArray();
+        DB::beginTransaction();
 
-        $recibo->update([
-            'estado' => 'RECHAZADO',
-            'observacion_admin' => $request->observacion_admin,
-            'aprobado_por' => $request->user()->id,
-            'fecha_revision' => now(),
-        ]);
+        try {
+            $recibo = ReciboPago::with('obligacion')
+                ->lockForUpdate()
+                ->find($id);
 
-        Auditoria::create([
-            'usuario_id' => $request->user()->id,
-            'modulo' => 'RECIBOS_PAGO',
-            'accion' => 'RECHAZAR',
-            'entidad' => 'recibos_pago',
-            'entidad_id' => $recibo->id,
-            'descripcion' => 'Rechazo de recibo de pago',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'datos_antes' => json_encode($antes, JSON_UNESCAPED_UNICODE),
-            'datos_despues' => json_encode($recibo->fresh()->toArray(), JSON_UNESCAPED_UNICODE),
-            'fecha_evento' => now(),
-        ]);
+            if (!$recibo) {
+                DB::rollBack();
+                return $this->error('Recibo no encontrado', null, 404);
+            }
 
-        return $this->success($recibo->fresh(), 'Recibo rechazado correctamente');
+            if ($recibo->estado === 'APROBADO') {
+                DB::rollBack();
+                return $this->error('No se puede rechazar un recibo aprobado', null, 409);
+            }
+
+            if ($recibo->estado === 'RECHAZADO') {
+                DB::rollBack();
+                return $this->error('El recibo ya fue rechazado', null, 409);
+            }
+
+            $antes = $recibo->toArray();
+
+            $recibo->update([
+                'estado' => 'RECHAZADO',
+                'observacion_admin' => $request->observacion_admin,
+                'aprobado_por' => $usuario->id,
+                'fecha_revision' => now(),
+            ]);
+
+            if ($recibo->obligacion) {
+                $recibo->obligacion->update([
+                    'estado' => 'PENDIENTE',
+                    'updated_at' => now(),
+                ]);
+            }
+
+            Auditoria::create([
+                'usuario_id' => $usuario->id,
+                'modulo' => 'RECIBOS_PAGO',
+                'accion' => 'RECHAZAR',
+                'entidad' => 'recibos_pago',
+                'entidad_id' => $recibo->id,
+                'descripcion' => 'Rechazo de recibo de pago',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'datos_antes' => json_encode($antes, JSON_UNESCAPED_UNICODE),
+                'datos_despues' => json_encode($recibo->fresh()->toArray(), JSON_UNESCAPED_UNICODE),
+                'fecha_evento' => now(),
+            ]);
+
+            DB::commit();
+
+            return $this->success(
+                $recibo->fresh([
+                    'asociado.usuario',
+                    'obligacion.tipoObligacion',
+                    'aprobadoPor',
+                ]),
+                'Recibo rechazado correctamente'
+            );
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return $this->error('Error al rechazar el recibo', [
+                'detalle' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile(),
+            ], 500);
+        }
     }
 
     public function descargarArchivo(int $id)
@@ -244,12 +396,15 @@ class ReciboPagoController extends BaseApiController
             return $this->error('Recibo no encontrado', null, 404);
         }
 
-        if (!Storage::disk('public')->exists($recibo->ruta_archivo)) {
-            return $this->error('El archivo no existe en almacenamiento', null, 404);
+        $rutaCompleta = storage_path('app/public/' . $recibo->ruta_archivo);
+
+        if (!file_exists($rutaCompleta)) {
+            return $this->error('Archivo no encontrado', null, 404);
         }
 
-        $disk = Storage::disk('public');
-        $rutaCompleta = $disk->path($recibo->ruta_archivo);
-        return response()->download($rutaCompleta, $recibo->nombre_original);
+        return response()->download(
+            $rutaCompleta,
+            $recibo->nombre_archivo
+        );
     }
 }

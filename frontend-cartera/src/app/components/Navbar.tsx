@@ -43,7 +43,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 p-1">
           {[
             { label: "Inicio", path: "/home" },
-            { label: "Afiliación", path: "/user/afiliacion" },
+            { label: "Afiliación", path: "/afiliacion" },
           ].map((item) => (
             <Link
               key={item.path}
@@ -71,7 +71,7 @@ export default function Navbar() {
               </Link>
 
               <Link
-                href="/user/afiliacion"
+                href="/afiliacion"
                 className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-black text-white shadow-lg hover:bg-blue-700"
               >
                 Afiliarme

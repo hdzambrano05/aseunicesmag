@@ -10,13 +10,37 @@ use Illuminate\Support\Facades\Validator;
 
 class SmmlvController extends BaseApiController
 {
-    public function index()
+    public function index(Request $request)
     {
-        $registros = SmmlvHistorico::with('registradoPor')
-            ->orderByDesc('anio')
-            ->get();
+        $query = SmmlvHistorico::with('registradoPor')
+            ->orderByDesc('anio');
 
-        return $this->success($registros, 'Histórico de SMMLV');
+        if ($request->filled('activo')) {
+            $query->where('activo', $request->boolean('activo'));
+        }
+
+        if ($request->filled('anio')) {
+            $query->where('anio', $request->anio);
+        }
+
+        return $this->success(
+            $query->get(),
+            'Histórico de SMMLV'
+        );
+    }
+
+    public function activo()
+    {
+        $registro = SmmlvHistorico::with('registradoPor')
+            ->where('activo', 1)
+            ->orderByDesc('anio')
+            ->first();
+
+        if (!$registro) {
+            return $this->error('No existe SMMLV activo', null, 404);
+        }
+
+        return $this->success($registro, 'SMMLV activo');
     }
 
     public function show(int $id)
@@ -48,7 +72,9 @@ class SmmlvController extends BaseApiController
 
         try {
             if ($request->boolean('activo', true)) {
-                SmmlvHistorico::query()->update(['activo' => 0]);
+                SmmlvHistorico::query()->update([
+                    'activo' => 0,
+                ]);
             }
 
             $registro = SmmlvHistorico::create([
@@ -57,11 +83,12 @@ class SmmlvController extends BaseApiController
                 'fecha_inicio_vigencia' => $request->fecha_inicio_vigencia,
                 'fecha_fin_vigencia' => $request->fecha_fin_vigencia,
                 'activo' => $request->boolean('activo', true),
-                'registrado_por' => $request->user()->id,
+                'registrado_por' => optional($request->user())->id,
+                'created_at' => now(),
             ]);
 
             Auditoria::create([
-                'usuario_id' => $request->user()->id,
+                'usuario_id' => optional($request->user())->id,
                 'modulo' => 'SMMLV',
                 'accion' => 'CREAR',
                 'entidad' => 'smmlv_historico',
@@ -79,7 +106,12 @@ class SmmlvController extends BaseApiController
             return $this->success($registro, 'SMMLV registrado correctamente', 201);
         } catch (\Throwable $e) {
             DB::rollBack();
-            return $this->error('Error al registrar SMMLV', $e->getMessage(), 500);
+
+            return $this->error('Error al registrar SMMLV', [
+                'detalle' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile(),
+            ], 500);
         }
     }
 
@@ -109,7 +141,10 @@ class SmmlvController extends BaseApiController
             $antes = $registro->toArray();
 
             if ($request->boolean('activo')) {
-                SmmlvHistorico::where('id', '<>', $registro->id)->update(['activo' => 0]);
+                SmmlvHistorico::where('id', '<>', $registro->id)
+                    ->update([
+                        'activo' => 0,
+                    ]);
             }
 
             $registro->update([
@@ -121,7 +156,7 @@ class SmmlvController extends BaseApiController
             ]);
 
             Auditoria::create([
-                'usuario_id' => $request->user()->id,
+                'usuario_id' => optional($request->user())->id,
                 'modulo' => 'SMMLV',
                 'accion' => 'ACTUALIZAR',
                 'entidad' => 'smmlv_historico',
@@ -139,7 +174,72 @@ class SmmlvController extends BaseApiController
             return $this->success($registro->fresh(), 'SMMLV actualizado correctamente');
         } catch (\Throwable $e) {
             DB::rollBack();
-            return $this->error('Error al actualizar SMMLV', $e->getMessage(), 500);
+
+            return $this->error('Error al actualizar SMMLV', [
+                'detalle' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile(),
+            ], 500);
+        }
+    }
+
+    public function cambiarEstado(Request $request, int $id)
+    {
+        $registro = SmmlvHistorico::find($id);
+
+        if (!$registro) {
+            return $this->error('Registro de SMMLV no encontrado', null, 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'activo' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error('Datos inválidos', $validator->errors(), 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $antes = $registro->toArray();
+
+            if ($request->boolean('activo')) {
+                SmmlvHistorico::where('id', '<>', $registro->id)
+                    ->update([
+                        'activo' => 0,
+                    ]);
+            }
+
+            $registro->update([
+                'activo' => $request->boolean('activo'),
+            ]);
+
+            Auditoria::create([
+                'usuario_id' => optional($request->user())->id,
+                'modulo' => 'SMMLV',
+                'accion' => 'CAMBIAR_ESTADO',
+                'entidad' => 'smmlv_historico',
+                'entidad_id' => $registro->id,
+                'descripcion' => 'Cambio de estado de SMMLV',
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'datos_antes' => json_encode($antes, JSON_UNESCAPED_UNICODE),
+                'datos_despues' => json_encode($registro->fresh()->toArray(), JSON_UNESCAPED_UNICODE),
+                'fecha_evento' => now(),
+            ]);
+
+            DB::commit();
+
+            return $this->success($registro->fresh(), 'Estado del SMMLV actualizado correctamente');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return $this->error('Error al cambiar estado del SMMLV', [
+                'detalle' => $e->getMessage(),
+                'linea' => $e->getLine(),
+                'archivo' => $e->getFile(),
+            ], 500);
         }
     }
 }
