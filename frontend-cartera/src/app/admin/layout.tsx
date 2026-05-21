@@ -7,6 +7,7 @@ import {
   Settings,
   ReceiptText,
   Bell,
+  FileBadge,
 } from "lucide-react";
 
 export default function AdminLayout({
@@ -26,10 +27,11 @@ export default function AdminLayout({
       path: "/admin/recibos-pago",
     },
     {
-      label: "Notificaciones",
-      icon: Bell,
-      path: "/admin/notificaciones",
+      label: "Certificados",
+      icon: FileBadge,
+      path: "/admin/certificados",
     },
+
     {
       label: "Expedientes",
       icon: FolderOpen,

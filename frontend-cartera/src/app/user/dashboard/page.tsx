@@ -6,7 +6,7 @@ import {
   obtenerSmmlvActivo,
   generarSostenimiento,
   anularObligacion,
-} from "@/services/obligacionesService";
+} from "../../../services/obligacionesService";
 import {
   subirReciboPago,
   obtenerMisRecibos,

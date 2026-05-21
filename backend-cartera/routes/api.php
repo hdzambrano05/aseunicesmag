@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\SmmlvController;
 use App\Http\Controllers\Api\TipoObligacionController;
 use App\Http\Controllers\Api\UsuarioController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ExpedienteController;
 
 Route::get('/ping', function () {
     return response()->json([
@@ -52,6 +53,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sesiones-usuario/{id}', [SesionUsuarioController::class, 'show']);
     Route::post('/sesiones-usuario', [SesionUsuarioController::class, 'store']);
     Route::put('/sesiones-usuario/{id}', [SesionUsuarioController::class, 'update']);
+
+    Route::get('/admin/expedientes', [ExpedienteController::class, 'index']);
+
 
     Route::get('/ciudades', [CiudadController::class, 'index']);
     Route::get('/ciudades/{id}', [CiudadController::class, 'show']);
@@ -114,6 +118,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/recibos-pago/{id}/rechazar', [ReciboPagoController::class, 'rechazar']);
 
     Route::get('/certificados', [CertificadoController::class, 'index']);
+    Route::get('/certificados/buscar-asociados', [CertificadoController::class, 'buscarAsociados']);
+    Route::get('/certificados/{asociadoId}/estado-cuenta', [CertificadoController::class, 'generarEstadoCuenta']);
     Route::get('/certificados/{id}', [CertificadoController::class, 'show']);
     Route::post('/certificados', [CertificadoController::class, 'store']);
     Route::put('/certificados/{id}', [CertificadoController::class, 'update']);
