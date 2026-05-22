@@ -8,6 +8,9 @@ import {
   generarEstadoCuentaPdf,
 } from "@/services/certificadoService";
 
+import { descargarExcelCarteraAprobados } from "@/services/reporteCarteraService";
+import { FileSpreadsheet } from "lucide-react";
+
 export default function CertificadosPage() {
   const [busqueda, setBusqueda] = useState("");
   const [asociados, setAsociados] = useState<AsociadoCertificado[]>([]);
@@ -99,6 +102,13 @@ export default function CertificadosPage() {
             </button>
           </div>
         </div>
+        <button
+          onClick={() => descargarExcelCarteraAprobados(2026)}
+          className="flex items-center gap-2 rounded-xl bg-green-700 px-4 py-2 text-white hover:bg-green-800"
+        >
+          <FileSpreadsheet size={18} />
+          Descargar Excel
+        </button>
 
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           {cargando ? (

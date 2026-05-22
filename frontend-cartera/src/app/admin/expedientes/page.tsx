@@ -17,6 +17,8 @@ import {
   listarExpedientes,
 } from "@/services/expedienteService";
 
+
+
 export default function ExpedientePage() {
   const [asociados, setAsociados] = useState<AsociadoExpediente[]>([]);
   const [busqueda, setBusqueda] = useState("");

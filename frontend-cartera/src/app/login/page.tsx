@@ -10,9 +10,11 @@ import {
   ArrowRight,
   Loader2,
   ShieldCheck,
+  Sparkles,
+  UserRoundCheck,
+  Building2,
 } from "lucide-react";
 import Link from "next/link";
-import Navbar from "../components/Navbar";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -61,7 +63,7 @@ export default function LoginPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "No se pudo iniciar sesión. Intenta nuevamente.",
+          : "No se pudo iniciar sesión.",
       );
     } finally {
       setLoading(false);
@@ -69,159 +71,169 @@ export default function LoginPage() {
   };
 
   return (
-    <>
-      <Navbar />
+    <main className="relative flex min-h-screen overflow-hidden bg-[#eef5ff]">
+      {/* FONDO */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -left-32 top-0 h-[500px] w-[500px] rounded-full bg-blue-300/20 blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-[450px] w-[450px] rounded-full bg-cyan-300/20 blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#21409A]/10 blur-3xl" />
+      </div>
 
-      <main className="min-h-screen bg-[#f4f7fb]">
-        <section className="mx-auto grid min-h-[calc(100vh-80px)] max-w-7xl items-center gap-10 px-6 py-12 lg:grid-cols-[1fr_460px]">
-          {/* IZQUIERDA */}
-          <div className="hidden lg:block">
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-bold text-blue-800 shadow-sm">
-              <ShieldCheck className="h-4 w-4" />
+      {/* LADO IZQUIERDO */}
+      <section className="relative hidden w-1/2 overflow-hidden bg-[#071f4d] lg:flex">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,#071f4d,#21409A,#1D4ED8,#0EA5E9)]" />
+
+        {/* FIGURAS */}
+        <div className="absolute -left-40 top-10 h-[550px] w-[550px] rounded-full border-[80px] border-white/10" />
+        <div className="absolute bottom-[-120px] left-10 h-[340px] w-[340px] rounded-full bg-white/10 backdrop-blur-2xl" />
+        <div className="absolute right-10 top-28 h-[200px] w-[200px] rounded-full bg-cyan-300/20 backdrop-blur-2xl" />
+        <div className="absolute -right-16 bottom-20 h-[240px] w-[240px] rounded-full border-[40px] border-white/10" />
+
+        <div className="relative z-10 flex h-full flex-col justify-between p-16 text-white">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2 text-sm font-black backdrop-blur">
+              <ShieldCheck size={17} />
               Portal seguro ASEUNICESMAG
-            </div>
+            </span>
 
-            <h1 className="mt-8 max-w-3xl text-5xl font-black leading-tight tracking-tight text-slate-950">
-              Acceso institucional para asociados y administradores
+            <h1 className="mt-14 max-w-2xl text-7xl font-black leading-[0.95] tracking-tight">
+              Bienvenido a tu plataforma institucional
             </h1>
 
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-              Ingresa a la plataforma para consultar información, gestionar
-              procesos, revisar pagos y administrar servicios de la asociación.
+            <p className="mt-8 max-w-xl text-xl leading-9 text-blue-50">
+              Ingresa para gestionar tus procesos, consultar información,
+              revisar beneficios y acceder a los servicios digitales.
             </p>
-
-            <div className="mt-10 grid max-w-2xl grid-cols-3 gap-4">
-              {[
-                ["Seguro", "Acceso protegido"],
-                ["Roles", "Control por perfil"],
-                ["Digital", "Gestión centralizada"],
-              ].map(([titulo, texto]) => (
-                <div
-                  key={titulo}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-                >
-                  <p className="text-lg font-black text-blue-900">{titulo}</p>
-                  <p className="mt-1 text-sm text-slate-500">{texto}</p>
-                </div>
-              ))}
-            </div>
           </div>
 
-          {/* FORMULARIO */}
-          <div className="w-full rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/70">
-            <div className="mb-8">
-              <p className="text-sm font-black uppercase tracking-widest text-blue-800">
-                Inicio de sesión
-              </p>
+          <div className="grid grid-cols-3 gap-5">
+            {[
+              ["Seguro", ShieldCheck],
+              ["Asociados", UserRoundCheck],
+              ["Gestión", Building2],
+            ].map(([titulo, Icono]: any) => (
+              <div
+                key={titulo}
+                className="rounded-[2rem] border border-white/15 bg-white/10 p-6 backdrop-blur-xl transition-all duration-300 hover:-translate-y-2 hover:bg-white/15"
+              >
+                <Icono className="h-8 w-8 text-cyan-100" />
 
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950">
-                Bienvenido
-              </h2>
+                <p className="mt-6 text-lg font-black">{titulo}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Ingresa tus credenciales para continuar.
-              </p>
+      {/* LOGIN */}
+      <section className="relative flex w-full items-center justify-center overflow-hidden bg-white lg:w-1/2">
+        {/* FIGURAS */}
+        <div className="absolute right-0 top-0 h-72 w-72 rounded-bl-full bg-[#21409A]/8" />
+        <div className="absolute bottom-0 left-0 h-80 w-80 rounded-tr-full bg-cyan-200/30" />
+        <div className="absolute left-20 top-20 h-32 w-32 rounded-full bg-blue-100/60 blur-2xl" />
+
+        <div className="relative z-10 w-full max-w-xl px-8">
+          <div className="mb-10">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#eaf2ff] px-5 py-2 text-sm font-black text-[#21409A]">
+              <Sparkles size={16} />
+              Inicio de sesión
+            </span>
+
+            <h2 className="mt-7 text-6xl font-black tracking-tight text-[#07122f]">
+              Sign in
+            </h2>
+
+            <p className="mt-4 text-lg leading-8 text-[#52607c]">
+              Ingresa tus credenciales para continuar.
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={iniciarSesion} className="space-y-6">
+            <div className="relative">
+              <Mail className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#21409A]" />
+
+              <input
+                type="email"
+                value={correo}
+                onChange={(e) => setCorreo(e.target.value)}
+                placeholder="Correo electrónico"
+                required
+                className="h-16 w-full rounded-3xl border border-transparent bg-[#f1f5fb] pl-14 pr-5 text-base font-bold text-[#07122f] outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-[#21409A] focus:bg-white focus:ring-4 focus:ring-blue-100"
+              />
             </div>
 
-            {error && (
-              <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
-                {error}
-              </div>
-            )}
+            <div className="relative">
+              <LockKeyhole className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#21409A]" />
 
-            <form onSubmit={iniciarSesion} className="space-y-5">
-              <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">
-                  Correo electrónico
-                </label>
-
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-
-                  <input
-                    type="email"
-                    value={correo}
-                    onChange={(e) => setCorreo(e.target.value)}
-                    placeholder="usuario@correo.com"
-                    required
-                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-700 focus:bg-white focus:ring-4 focus:ring-blue-100"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label className="block text-sm font-bold text-slate-700">
-                    Contraseña
-                  </label>
-
-                  <Link
-                    href="/recuperar-password"
-                    className="text-xs font-bold text-blue-700 hover:text-blue-900"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </Link>
-                </div>
-
-                <div className="relative">
-                  <LockKeyhole className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-
-                  <input
-                    type={verPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Ingresa tu contraseña"
-                    required
-                    className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-12 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-700 focus:bg-white focus:ring-4 focus:ring-blue-100"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => setVerPassword(!verPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-blue-700"
-                  >
-                    {verPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
+              <input
+                type={verPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Contraseña"
+                required
+                className="h-16 w-full rounded-3xl border border-transparent bg-[#f1f5fb] pl-14 pr-14 text-base font-bold text-[#07122f] outline-none transition-all duration-300 placeholder:text-slate-400 focus:border-[#21409A] focus:bg-white focus:ring-4 focus:ring-blue-100"
+              />
 
               <button
-                type="submit"
-                disabled={loading}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-800 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-70"
+                type="button"
+                onClick={() => setVerPassword(!verPassword)}
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-[#21409A]"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Ingresando...
-                  </>
+                {verPassword ? (
+                  <EyeOff size={22} />
                 ) : (
-                  <>
-                    Ingresar
-                    <ArrowRight className="h-4 w-4" />
-                  </>
+                  <Eye size={22} />
                 )}
               </button>
-            </form>
-
-            <div className="mt-7 border-t border-slate-200 pt-6 text-center">
-              <p className="text-sm text-slate-500">
-                ¿Aún no estás afiliado?{" "}
-                <Link
-                  href="/afiliacion"
-                  className="font-black text-blue-800 hover:text-blue-900"
-                >
-                  Solicita tu afiliación
-                </Link>
-              </p>
             </div>
+
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="group flex h-16 w-full items-center justify-center gap-3 rounded-3xl bg-gradient-to-r from-[#071f4d] via-[#21409A] to-[#0EA5E9] text-lg font-black text-white shadow-2xl shadow-blue-900/25 transition-all duration-300 hover:-translate-y-1 hover:shadow-blue-900/40 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Ingresando...
+                </>
+              ) : (
+                <>
+                  Ingresar
+                  <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="my-10 flex items-center gap-4">
+            <div className="h-px flex-1 bg-slate-200" />
+
+            <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">
+              ASEUNICESMAG
+            </span>
+
+            <div className="h-px flex-1 bg-slate-200" />
           </div>
-        </section>
-      </main>
-    </>
+
+          <p className="text-center text-base text-[#52607c]">
+            ¿Aún no estás afiliado?{" "}
+            <Link
+              href="/afiliacion"
+              className="font-black text-[#21409A] hover:text-[#071f4d]"
+            >
+              Solicita tu afiliación
+            </Link>
+          </p>
+        </div>
+      </section>
+    </main>
   );
 }

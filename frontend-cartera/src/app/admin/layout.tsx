@@ -6,15 +6,18 @@ import {
   FolderOpen,
   Settings,
   ReceiptText,
-  Bell,
   FileBadge,
 } from "lucide-react";
+
+import { useAutoLogout } from "@/hooks/useAutoLogout";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  useAutoLogout();
+
   const menu = [
     {
       label: "Verificación",
@@ -31,7 +34,6 @@ export default function AdminLayout({
       icon: FileBadge,
       path: "/admin/certificados",
     },
-
     {
       label: "Expedientes",
       icon: FolderOpen,

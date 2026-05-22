@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\TipoObligacionController;
 use App\Http\Controllers\Api\UsuarioController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ExpedienteController;
+use App\Http\Controllers\Api\ReporteCarteraController;
 
 Route::get('/ping', function () {
     return response()->json([
@@ -56,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/admin/expedientes', [ExpedienteController::class, 'index']);
 
+    Route::get('/reportes/cartera/excel', [ReporteCarteraController::class, 'exportarExcel']);
 
     Route::get('/ciudades', [CiudadController::class, 'index']);
     Route::get('/ciudades/{id}', [CiudadController::class, 'show']);

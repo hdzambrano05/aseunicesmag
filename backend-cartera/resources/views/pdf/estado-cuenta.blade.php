@@ -12,7 +12,7 @@
 
         body {
             font-family: "Times New Roman", serif;
-            font-size: 12px;
+            font-size: 11px;
             color: #111;
         }
 
@@ -85,14 +85,25 @@
             font-weight: bold;
         }
 
+        .verde {
+            color: #008000;
+            font-weight: bold;
+        }
+
         .rojo {
             color: #9c0006;
             font-weight: bold;
         }
 
         .total {
-            font-size: 18px;
+            font-size: 17px;
             color: #9c0006;
+            font-weight: bold;
+        }
+
+        .total-verde {
+            font-size: 14px;
+            color: #008000;
             font-weight: bold;
         }
 
@@ -114,6 +125,10 @@
         .observaciones p {
             margin: 8px 0;
         }
+
+        .small {
+            font-size: 10px;
+        }
     </style>
 </head>
 
@@ -121,7 +136,6 @@
 
     @php
     $nombreCompleto = trim(($usuario->nombres ?? '') . ' ' . ($usuario->apellidos ?? ''));
-
     $documento = $usuario->numero_documento ?? '';
     $correo = $usuario->correo ?? '';
     $telefono = $usuario->telefono ?? '';
@@ -131,36 +145,17 @@
     ? \Carbon\Carbon::parse($asociado->fecha_afiliacion)->locale('es')->translatedFormat('d \d\e F \d\e Y')
     : 'NO REGISTRADA';
 
-    $anio = now()->year;
+    $anio = $anio ?? now()->year;
+    $valorMes = $valorMensual ?? 17000;
 
-    /*
-    Estos valores deben llegar desde el CertificadoController.
-    NO se calculan por defecto como 6 meses, porque si ya pagó uno,
-    solo debe salir lo pendiente.
-    */
-    $valorMes = 17000;
-
-    $totalPrimerSemestre = $totalPrimerSemestre ?? 0;
-    $totalSegundoSemestre = $totalSegundoSemestre ?? 0;
-    $totalGeneral = $totalGeneral ?? ($totalPrimerSemestre + $totalSegundoSemestre);
-
-    $mesesPrimerSemestre = $valorMes > 0 ? ceil($totalPrimerSemestre / $valorMes) : 0;
-    $mesesSegundoSemestre = $valorMes > 0 ? ceil($totalSegundoSemestre / $valorMes) : 0;
-
-    $pagoSemestralPrimero = $pagoSemestralPrimero ?? (
-    $totalPrimerSemestre > 0 ? $totalPrimerSemestre - ($totalPrimerSemestre * 0.10) : 0
-    );
-
-    $pagoSemestralSegundo = $pagoSemestralSegundo ?? (
-    $totalSegundoSemestre > 0 ? $totalSegundoSemestre - ($totalSegundoSemestre * 0.10) : 0
-    );
-
-    $pagoAnual = $pagoAnual ?? (
-    $totalGeneral > 0 ? $totalGeneral - ($totalGeneral * 0.30) : 0
-    );
+    $filasEstadoCuenta = $filasEstadoCuenta ?? [];
+    $totalPagado = $totalPagado ?? 0;
+    $totalDebe = $totalDebe ?? 0;
+    $descuentoSemestral = $descuentoSemestral ?? 0;
+    $totalConDescuento = $totalConDescuento ?? 0;
 
     function monedaPdf($valor) {
-    return number_format($valor, 0, ',', '.');
+    return number_format((float) $valor, 0, ',', '.');
     }
     @endphp
 
@@ -239,88 +234,69 @@
         <table>
             <thead>
                 <tr class="azul center">
-                    <th style="width: 22%;">Detalle</th>
-                    <th colspan="2" style="width: 20%;">Periodo</th>
-                    <th style="width: 17%;">Valor mes</th>
-                    <th style="width: 12%;">N° de meses</th>
-                    <th style="width: 12%;">Estado de<br>cuenta</th>
-                    <th style="width: 17%;">Valor</th>
+                    <th style="width: 20%;">Detalle</th>
+                    <th colspan="2" style="width: 14%;">Periodo</th>
+                    <th style="width: 12%;">Fecha pago</th>
+                    <th style="width: 12%;">Vencimiento</th>
+                    <th style="width: 11%;">Valor mes</th>
+                    <th style="width: 8%;">Meses</th>
+                    <th style="width: 10%;">Estado</th>
+                    <th style="width: 13%;">Valor</th>
                 </tr>
             </thead>
 
             <tbody>
-                @if($totalPrimerSemestre > 0)
+                @forelse($filasEstadoCuenta as $fila)
                 <tr>
-                    <td>Sostenimiento {{ $anio }}-I</td>
-                    <td class="center">1-ene</td>
-                    <td class="center">30-jun</td>
-                    <td class="right">$ {{ monedaPdf($valorMes) }}</td>
-                    <td class="center">{{ $mesesPrimerSemestre }}</td>
-                    <td class="center rojo">Debe</td>
-                    <td class="right">$ {{ monedaPdf($totalPrimerSemestre) }}</td>
-                </tr>
-                @endif
+                    <td>{{ $fila['detalle'] }}</td>
+                    <td class="center">{{ $fila['periodo_inicio'] ?? 'N/A' }}</td>
+                    <td class="center">{{ $fila['periodo_fin'] ?? 'N/A' }}</td>
+                    <td class="center small">{{ $fila['fecha_pago'] ?? 'N/A' }}</td>
+                    <td class="center small">{{ $fila['fecha_vencimiento'] ?? 'N/A' }}</td>
+                    <td class="right">$ {{ monedaPdf($fila['valor_mes'] ?? $valorMes) }}</td>
+                    <td class="center">{{ $fila['meses'] ?? 1 }}</td>
 
-                @if($totalSegundoSemestre > 0)
-                <tr>
-                    <td>Sostenimiento {{ $anio }}-II</td>
-                    <td class="center">1-jul</td>
-                    <td class="center">31-dic</td>
-                    <td class="right">$ {{ monedaPdf($valorMes) }}</td>
-                    <td class="center">{{ $mesesSegundoSemestre }}</td>
+                    @if(($fila['estado'] ?? '') === 'Pagado')
+                    <td class="center verde">Pagado</td>
+                    @else
                     <td class="center rojo">Debe</td>
-                    <td class="right">$ {{ monedaPdf($totalSegundoSemestre) }}</td>
-                </tr>
-                @endif
-
-                @if($totalGeneral <= 0)
-                    <tr>
-                    <td colspan="7" class="center bold">
-                        El asociado no presenta obligaciones pendientes por sostenimiento.
-                    </td>
-                    </tr>
                     @endif
 
-                    <tr>
-                        <td colspan="6" class="center bold">TOTAL</td>
-                        <td class="right total">$ {{ monedaPdf($totalGeneral) }}</td>
-                    </tr>
+                    <td class="right bold">$ {{ monedaPdf($fila['valor'] ?? 0) }}</td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="9" class="center bold">
+                        El asociado no presenta obligaciones registradas para este año.
+                    </td>
+                </tr>
+                @endforelse
+
+                <tr>
+                    <td colspan="8" class="center bold">TOTAL PAGADO</td>
+                    <td class="right total-verde">$ {{ monedaPdf($totalPagado) }}</td>
+                </tr>
+
+                <tr>
+                    <td colspan="8" class="center bold">TOTAL DEBE</td>
+                    <td class="right total">$ {{ monedaPdf($totalDebe) }}</td>
+                </tr>
             </tbody>
         </table>
 
-        @if($totalGeneral > 0)
+        @if($totalDebe > 0)
         <table>
             <tr>
                 <td colspan="5" class="seccion">PAGO DE CUOTAS PENDIENTES 10% DESCUENTO</td>
             </tr>
 
-            @if($totalPrimerSemestre > 0)
             <tr>
                 <td colspan="2" class="center bold">
-                    Para activar membresía de enero a junio de {{ $anio }}
+                    Para activar membresía pendiente del año {{ $anio }}
                 </td>
                 <td class="right azul-claro">Menos</td>
                 <td class="center azul-claro">10%</td>
-                <td class="right bold">$ {{ monedaPdf($totalPrimerSemestre) }}</td>
-            </tr>
-
-            <tr>
-                <td colspan="3" class="azul-claro">
-                    Fecha límite pago hasta el de 31 enero {{ $anio }}
-                </td>
-                <td class="right azul-claro bold">Total a pagar</td>
-                <td class="right azul-claro bold">$ {{ monedaPdf($pagoSemestralPrimero) }}</td>
-            </tr>
-            @endif
-
-            @if($totalSegundoSemestre > 0)
-            <tr>
-                <td colspan="2" class="center bold">
-                    Para activar membresía de julio a diciembre de {{ $anio }}
-                </td>
-                <td class="right azul-claro">Menos</td>
-                <td class="center azul-claro">10%</td>
-                <td class="right bold">$ {{ monedaPdf($totalSegundoSemestre) }}</td>
+                <td class="right bold">$ {{ monedaPdf($totalDebe) }}</td>
             </tr>
 
             <tr>
@@ -328,35 +304,47 @@
                     Fecha límite pago hasta el de 05 julio {{ $anio }}
                 </td>
                 <td class="right azul-claro bold">Total a pagar</td>
-                <td class="right azul-claro bold">$ {{ monedaPdf($pagoSemestralSegundo) }}</td>
-            </tr>
-            @endif
-
-            @if($totalPrimerSemestre > 0 && $totalSegundoSemestre > 0)
-            <tr>
-                <td colspan="5" class="seccion">
-                    PAGO DEL AÑO {{ $anio }} DESCUENTO 30%
-                </td>
+                <td class="right azul-claro bold">$ {{ monedaPdf($totalConDescuento) }}</td>
             </tr>
 
             <tr>
-                <td colspan="2" class="center bold">
-                    Para activar membresía hasta 31 de diciembre {{ $anio }}
-                </td>
-                <td class="right azul-claro">Menos</td>
-                <td class="center azul-claro">30%</td>
-                <td class="right bold">$ {{ monedaPdf($totalGeneral) }}</td>
+                <td colspan="5" class="seccion">RESUMEN DE DINERO</td>
             </tr>
 
             <tr>
-                <td colspan="3" class="azul-claro">
-                    Fecha límite pago hasta el de 31 enero {{ $anio }}
-                </td>
-                <td class="right azul-claro bold">Total a pagar</td>
-                <td class="right azul-claro bold">$ {{ monedaPdf($pagoAnual) }}</td>
+                <td colspan="4" class="right bold">Total pagado aprobado</td>
+                <td class="right verde">$ {{ monedaPdf($totalPagado) }}</td>
             </tr>
-            @endif
 
+            <tr>
+                <td colspan="4" class="right bold">Total pendiente sin descuento</td>
+                <td class="right rojo">$ {{ monedaPdf($totalDebe) }}</td>
+            </tr>
+
+            <tr>
+                <td colspan="4" class="right bold">Descuento aplicado 10%</td>
+                <td class="right azul-claro">$ {{ monedaPdf($descuentoSemestral) }}</td>
+            </tr>
+
+            <tr>
+                <td colspan="4" class="right bold">Total pendiente con descuento</td>
+                <td class="right total">$ {{ monedaPdf($totalConDescuento) }}</td>
+            </tr>
+        </table>
+        @else
+        <table>
+            <tr>
+                <td colspan="5" class="seccion">ESTADO DE CUENTA</td>
+            </tr>
+            <tr>
+                <td colspan="5" class="center verde bold">
+                    El asociado se encuentra al día. No presenta valores pendientes.
+                </td>
+            </tr>
+        </table>
+        @endif
+
+        <table>
             <tr>
                 <td colspan="5" class="seccion">OBSERVACIONES</td>
             </tr>
@@ -398,7 +386,6 @@
                 </td>
             </tr>
         </table>
-        @endif
 
     </div>
 

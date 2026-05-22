@@ -2,205 +2,269 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import {
-  Menu,
-  X,
-  ChevronDown,
-  Phone,
-  User,
-  LogIn,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Menu, X, ChevronDown, Phone, User, LogIn } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [usuario, setUsuario] = useState<any>(null);
   const [openDropdown, setOpenDropdown] = useState(false);
-
-  const isActive = (path: string) => pathname === path;
+  const [openMobileDropdown, setOpenMobileDropdown] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const userStorage = localStorage.getItem("usuario");
-    if (userStorage) {
-      setUsuario(JSON.parse(userStorage));
-    }
+    if (userStorage) setUsuario(JSON.parse(userStorage));
   }, []);
+
+  const isActive = (path: string) =>
+    pathname === path || pathname.startsWith(path + "/");
+
+  const quienesSomosItems = [
+    { label: "Nuestra Historia", path: "/quienes-somos/nuestra-historia" },
+    { label: "Misión y visión", path: "/quienes-somos/mision-vision" },
+    { label: "Asociados Honorarios", path: "/quienes-somos/asociados-honorarios" },
+    { label: "Estructura de Gobierno", path: "/quienes-somos/estructura-gobierno" },
+    { label: "Portafolio Institucional", path: "/quienes-somos/portafolio-institucional" },
+  ];
 
   const navItems = [
     { label: "Inicio", path: "/home" },
     { label: "Afíliate aquí", path: "/afiliacion" },
     { label: "Convenios", path: "/convenios" },
-    { label: "Transparencia", path: "/transparencia" },
   ];
 
-  const dropdownItems = [
-    { label: "Quiénes somos", path: "/quienes-somos" },
-    { label: "Misión y Visión", path: "/mision-vision" },
-    { label: "Junta Directiva", path: "/junta-directiva" },
-    { label: "Contáctanos", path: "/contacto" },
-  ];
+  const openMenu = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setOpenDropdown(true);
+  };
+
+  const closeMenu = () => {
+    timeoutRef.current = setTimeout(() => {
+      setOpenDropdown(false);
+    }, 280);
+  };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur-xl">
-      <nav className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-6">
+    <header className="sticky top-0 z-50 w-full bg-white/95 shadow-sm backdrop-blur-xl">
+      <nav className="relative mx-auto flex h-[66px] max-w-7xl items-center justify-between px-5 lg:px-8">
         {/* LOGO */}
-        <Link href="/home" className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm">
+        <Link href="/home" className="flex items-center gap-2.5">
+          <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-[#dce5f4] bg-white shadow-sm">
             <img
-              src="/logo.png"
+              src="/logo/logo1.jpg"
               alt="ASEUNICESMAG"
               className="h-full w-full object-contain p-1"
             />
           </div>
 
-          <div className="leading-tight">
-            <h1 className="text-xl font-black tracking-tight text-blue-800">
+          <div className="leading-none">
+            <h1 className="text-[22px] font-black tracking-tight text-[#21409A]">
               ASEUNICESMAG
             </h1>
-            <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-slate-400">
+            <p className="mt-1 text-[8px] font-bold uppercase tracking-[0.42em] text-[#8b99b5]">
               Asociación de Egresados
             </p>
           </div>
         </Link>
 
-        {/* NAV DESKTOP */}
-        <div className="hidden items-center gap-7 lg:flex">
-          {navItems.slice(0, 3).map((item) => (
+        {/* DESKTOP */}
+        <div className="hidden items-center gap-1 lg:flex">
+          {navItems.map((item) => (
             <Link
               key={item.path}
               href={item.path}
-              className={`relative text-sm font-bold transition ${
+              className={`relative rounded-full px-4 py-2 text-[13px] font-extrabold transition ${
                 isActive(item.path)
-                  ? "text-blue-800"
-                  : "text-slate-600 hover:text-blue-800"
+                  ? "bg-[#eef4ff] text-[#21409A]"
+                  : "text-[#34405a] hover:bg-[#f4f7fb] hover:text-[#21409A]"
               }`}
             >
               {item.label}
-
-              {isActive(item.path) && (
-                <span className="absolute -bottom-7 left-0 h-[3px] w-full rounded-full bg-blue-800" />
-              )}
             </Link>
           ))}
 
+          {/* QUIÉNES SOMOS */}
           <div
             className="relative"
-            onMouseEnter={() => setOpenDropdown(true)}
-            onMouseLeave={() => setOpenDropdown(false)}
+            onMouseEnter={openMenu}
+            onMouseLeave={closeMenu}
           >
             <button
               type="button"
-              className="flex items-center gap-1 text-sm font-bold text-slate-600 transition hover:text-blue-800"
+              onClick={() => setOpenDropdown(!openDropdown)}
+              className={`flex items-center gap-1 rounded-full px-4 py-2 text-[13px] font-extrabold transition ${
+                isActive("/quienes-somos")
+                  ? "bg-[#eef4ff] text-[#21409A]"
+                  : "text-[#34405a] hover:bg-[#f4f7fb] hover:text-[#21409A]"
+              }`}
             >
               Quiénes somos
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown
+                size={15}
+                className={`transition ${openDropdown ? "rotate-180" : ""}`}
+              />
             </button>
 
-            {openDropdown && (
-              <div className="absolute left-0 top-8 w-64 rounded-2xl border border-slate-100 bg-white p-2 shadow-2xl shadow-slate-900/10">
-                {dropdownItems.map((item) => (
+            <div
+              className={`absolute left-1/2 top-full z-50 w-[280px] -translate-x-1/2 pt-4 transition-all duration-300 ${
+                openDropdown
+                  ? "pointer-events-auto translate-y-0 opacity-100"
+                  : "pointer-events-none -translate-y-2 opacity-0"
+              }`}
+            >
+              <div className="relative overflow-hidden rounded-[24px] bg-[#102947] p-2 shadow-2xl shadow-[#102947]/30">
+                <div className="absolute left-0 top-0 h-2 w-full bg-[#ed1c24]" />
+
+                {quienesSomosItems.map((item) => (
                   <Link
                     key={item.path}
                     href={item.path}
-                    className="block rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-blue-50 hover:text-blue-800"
+                    onClick={() => setOpenDropdown(false)}
+                    className={`group mt-1 flex items-center justify-between rounded-[18px] px-4 py-3 text-[13px] font-bold transition ${
+                      isActive(item.path)
+                        ? "bg-white text-[#21409A]"
+                        : "text-white hover:bg-white/10"
+                    }`}
                   >
                     {item.label}
+                    <span className="opacity-0 transition group-hover:opacity-100">
+                      →
+                    </span>
                   </Link>
                 ))}
               </div>
-            )}
+            </div>
           </div>
 
           <Link
             href="/transparencia"
-            className={`relative text-sm font-bold transition ${
+            className={`rounded-full px-4 py-2 text-[13px] font-extrabold transition ${
               isActive("/transparencia")
-                ? "text-blue-800"
-                : "text-slate-600 hover:text-blue-800"
+                ? "bg-[#eef4ff] text-[#21409A]"
+                : "text-[#34405a] hover:bg-[#f4f7fb] hover:text-[#21409A]"
             }`}
           >
-            Transparencia
-
-            {isActive("/transparencia") && (
-              <span className="absolute -bottom-7 left-0 h-[3px] w-full rounded-full bg-blue-800" />
-            )}
+            Transparencia y Gobierno
           </Link>
         </div>
 
         {/* DERECHA */}
-        <div className="hidden items-center gap-4 md:flex">
+        <div className="hidden items-center gap-3 lg:flex">
           <a
             href="tel:3185335311"
-            className="hidden items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-blue-800 xl:flex"
+            className="flex items-center gap-2 rounded-full bg-[#f2f6fd] px-4 py-2 text-[13px] font-black text-[#21409A]"
           >
-            <Phone className="h-4 w-4" />
+            <Phone size={15} />
             318 5335311
           </a>
 
           {!usuario ? (
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-full bg-blue-800 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-blue-900"
+              className="inline-flex items-center gap-2 rounded-full bg-[#21409A] px-5 py-2.5 text-[13px] font-black text-white shadow-lg shadow-[#21409A]/25 transition hover:bg-[#17337c]"
             >
-              <LogIn className="h-4 w-4" />
+              <LogIn size={15} />
               Ingresar
             </Link>
           ) : (
             <Link
               href="/user/dashboard"
-              className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2.5 text-sm font-black text-blue-800"
+              className="inline-flex items-center gap-2 rounded-full bg-[#eef4ff] px-4 py-2.5 text-[13px] font-black text-[#21409A]"
             >
-              <User className="h-4 w-4" />
+              <User size={15} />
               {usuario.nombres}
             </Link>
           )}
         </div>
 
-        {/* BOTÓN MOBILE */}
+        {/* MOBILE */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef4ff] text-[#21409A] lg:hidden"
         >
-          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {menuOpen ? <X size={21} /> : <Menu size={21} />}
         </button>
       </nav>
 
-      {/* LÍNEA CORPORATIVA */}
-      <div className="h-[3px] w-full bg-gradient-to-r from-blue-950 via-blue-700 to-cyan-400" />
 
-      {/* MOBILE */}
+      {/* MENÚ MOBILE */}
       {menuOpen && (
-        <div className="border-t border-slate-100 bg-white px-6 py-5 shadow-xl lg:hidden">
-          <div className="mx-auto max-w-7xl space-y-2">
-            {[...navItems, ...dropdownItems].map((item) => (
+        <div className="border-t border-[#e5ecf7] bg-white px-5 py-5 shadow-xl lg:hidden">
+          <div className="space-y-2">
+            {navItems.map((item) => (
               <Link
                 key={item.path}
                 href={item.path}
                 onClick={() => setMenuOpen(false)}
-                className={`block rounded-xl px-4 py-3 text-sm font-bold transition ${
+                className={`block rounded-2xl px-4 py-3 text-sm font-extrabold ${
                   isActive(item.path)
-                    ? "bg-blue-50 text-blue-800"
-                    : "text-slate-700 hover:bg-slate-50"
+                    ? "bg-[#21409A] text-white"
+                    : "text-[#34405a] hover:bg-[#f4f7fb]"
                 }`}
               >
                 {item.label}
               </Link>
             ))}
 
+            <button
+              onClick={() => setOpenMobileDropdown(!openMobileDropdown)}
+              className="flex w-full items-center justify-between rounded-2xl px-4 py-3 text-sm font-extrabold text-[#34405a] hover:bg-[#f4f7fb]"
+            >
+              Quiénes somos
+              <ChevronDown
+                size={16}
+                className={`transition ${
+                  openMobileDropdown ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {openMobileDropdown && (
+              <div className="ml-3 space-y-1 border-l-2 border-[#ed1c24] pl-3">
+                {quienesSomosItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    onClick={() => setMenuOpen(false)}
+                    className={`block rounded-xl px-4 py-3 text-sm font-bold ${
+                      isActive(item.path)
+                        ? "bg-[#eef4ff] text-[#21409A]"
+                        : "text-[#52607c] hover:bg-[#f4f7fb]"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            <Link
+              href="/transparencia"
+              onClick={() => setMenuOpen(false)}
+              className={`block rounded-2xl px-4 py-3 text-sm font-extrabold ${
+                isActive("/transparencia")
+                  ? "bg-[#21409A] text-white"
+                  : "text-[#34405a] hover:bg-[#f4f7fb]"
+              }`}
+            >
+              Transparencia y Gobierno
+            </Link>
+
             <a
               href="tel:3185335311"
-              className="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-3 text-sm font-black text-blue-800"
+              className="flex items-center gap-2 rounded-2xl bg-[#f2f6fd] px-4 py-3 text-sm font-black text-[#21409A]"
             >
-              <Phone className="h-4 w-4" />
-              Comunícate! 318 5335311
+              <Phone size={16} />
+              318 5335311
             </a>
 
             {!usuario ? (
               <Link
                 href="/login"
                 onClick={() => setMenuOpen(false)}
-                className="block rounded-xl bg-blue-800 px-4 py-3 text-center text-sm font-black text-white"
+                className="block rounded-2xl bg-[#21409A] px-4 py-3 text-center text-sm font-black text-white"
               >
                 Ingresar
               </Link>
@@ -208,7 +272,7 @@ export default function Navbar() {
               <Link
                 href="/user/dashboard"
                 onClick={() => setMenuOpen(false)}
-                className="block rounded-xl bg-blue-50 px-4 py-3 text-sm font-black text-blue-800"
+                className="block rounded-2xl bg-[#eef4ff] px-4 py-3 text-sm font-black text-[#21409A]"
               >
                 Sesión: {usuario.nombres}
               </Link>

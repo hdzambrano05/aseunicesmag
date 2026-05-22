@@ -3,11 +3,15 @@
 import SidebarLayout from "../components/SidebarLayout";
 import { LayoutDashboard, ReceiptText, Bell, User } from "lucide-react";
 
+import { useAutoLogout } from "@/hooks/useAutoLogout";
+
 export default function AsociadoLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  useAutoLogout();
+
   const menu = [
     {
       label: "Dashboard",

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Asociado;
 use App\Models\Certificado;
+use App\Models\Obligacion;
 use App\Models\ReciboPago;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -11,9 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-/**
- * /
- */
+
 class CertificadoController extends BaseApiController
 {
     public function index(Request $request)
@@ -126,62 +125,114 @@ class CertificadoController extends BaseApiController
         }
 
         $usuario = $asociado->usuario;
-
         $anio = now()->year;
         $valorMensual = 17000;
 
-        $valorSemestre = $valorMensual * 6;
-        $valorAnual = $valorMensual * 12;
+        $estadosPagadosRecibo = ['APROBADO', 'APROBADA', 'PAGADO', 'PAGADA'];
+        $estadosPagadosObligacion = ['PAGADO', 'PAGADA', 'APROBADO', 'APROBADA'];
 
-        /*
-            Se toman recibos APROBADOS del año.
-            Si pagó $102.000, se toma como un semestre pagado.
-            Si pagó $204.000, se toma como el año completo pagado.
-        */
-        $recibosAprobados = ReciboPago::where('asociado_id', $asociado->id)
-            ->whereIn('estado', ['APROBADO', 'APROBADA', 'PAGADO', 'PAGADA'])
-            ->whereYear('fecha_pago', $anio)
+        $obligaciones = Obligacion::with([
+            'periodo',
+            'tipoObligacion',
+            'recibosPago' => function ($q) use ($estadosPagadosRecibo, $anio) {
+                $q->whereIn('estado', $estadosPagadosRecibo)
+                    ->whereYear('fecha_pago', $anio)
+                    ->orderBy('fecha_pago');
+            },
+        ])
+            ->where('asociado_id', $asociado->id)
+            ->where(function ($q) use ($anio) {
+                $q->whereYear('fecha_generacion', $anio)
+                    ->orWhereHas('periodo', function ($p) use ($anio) {
+                        $p->where('anio', $anio);
+                    });
+            })
+            ->orderBy('fecha_generacion')
             ->get();
 
-        $totalPagado = (float) $recibosAprobados->sum('valor_reportado');
+        $filasEstadoCuenta = [];
 
-        $pagadoPrimerSemestre = 0;
-        $pagadoSegundoSemestre = 0;
+        foreach ($obligaciones as $obligacion) {
+            $periodo = $obligacion->periodo;
 
-        if ($totalPagado >= $valorAnual) {
-            $pagadoPrimerSemestre = $valorSemestre;
-            $pagadoSegundoSemestre = $valorSemestre;
-        } elseif ($totalPagado >= $valorSemestre) {
-            $pagadoPrimerSemestre = $valorSemestre;
-            $pagadoSegundoSemestre = $totalPagado - $valorSemestre;
-        } else {
-            $pagadoPrimerSemestre = $totalPagado;
-            $pagadoSegundoSemestre = 0;
+            $periodoInicio = $periodo && $periodo->fecha_inicio
+                ? Carbon::parse($periodo->fecha_inicio)->format('d-m')
+                : 'N/A';
+
+            $periodoFin = $periodo && $periodo->fecha_fin
+                ? Carbon::parse($periodo->fecha_fin)->format('d-m')
+                : 'N/A';
+
+            $periodoNombre = $periodo->nombre ?? 'Sin periodo';
+
+            $fechaVencimiento = $obligacion->fecha_vencimiento
+                ? Carbon::parse($obligacion->fecha_vencimiento)->format('d/m/Y')
+                : 'N/A';
+
+            $tipo = $obligacion->tipoObligacion->nombre ?? 'Obligación';
+            $concepto = $obligacion->concepto ?? $tipo;
+
+            $detalle = trim($tipo . ' - ' . $concepto);
+
+            $saldoPendiente = max(0, (float) $obligacion->saldo_pendiente);
+
+            foreach ($obligacion->recibosPago as $recibo) {
+                $valorPagadoRecibo = (float) $recibo->valor_reportado;
+
+                if ($valorPagadoRecibo <= 0) {
+                    continue;
+                }
+
+                $filasEstadoCuenta[] = [
+                    'obligacion_id' => $obligacion->id,
+                    'numero_obligacion' => $obligacion->numero_obligacion,
+                    'numero_recibo' => $recibo->numero_recibo,
+                    'detalle' => $detalle,
+                    'periodo_nombre' => $periodoNombre,
+                    'periodo_inicio' => $periodoInicio,
+                    'periodo_fin' => $periodoFin,
+                    'fecha_pago' => $recibo->fecha_pago
+                        ? Carbon::parse($recibo->fecha_pago)->format('d/m/Y')
+                        : 'N/A',
+                    'fecha_vencimiento' => $fechaVencimiento,
+                    'valor_mes' => $valorMensual,
+                    'meses' => max(1, round($valorPagadoRecibo / $valorMensual)),
+                    'estado' => 'Pagado',
+                    'valor' => $valorPagadoRecibo,
+                    'banco' => $recibo->banco ?? 'No registra',
+                ];
+            }
+
+            if ($saldoPendiente > 0 && !in_array(strtoupper($obligacion->estado), $estadosPagadosObligacion)) {
+                $filasEstadoCuenta[] = [
+                    'obligacion_id' => $obligacion->id,
+                    'numero_obligacion' => $obligacion->numero_obligacion,
+                    'numero_recibo' => null,
+                    'detalle' => $detalle,
+                    'periodo_nombre' => $periodoNombre,
+                    'periodo_inicio' => $periodoInicio,
+                    'periodo_fin' => $periodoFin,
+                    'fecha_pago' => 'Pendiente',
+                    'fecha_vencimiento' => $fechaVencimiento,
+                    'valor_mes' => $valorMensual,
+                    'meses' => max(1, ceil($saldoPendiente / $valorMensual)),
+                    'estado' => 'Debe',
+                    'valor' => $saldoPendiente,
+                    'banco' => 'Pendiente',
+                ];
+            }
         }
 
-        $totalPrimerSemestre = max(0, $valorSemestre - $pagadoPrimerSemestre);
-        $totalSegundoSemestre = max(0, $valorSemestre - $pagadoSegundoSemestre);
-        $totalGeneral = $totalPrimerSemestre + $totalSegundoSemestre;
+        $totalPagado = collect($filasEstadoCuenta)
+            ->where('estado', 'Pagado')
+            ->sum('valor');
 
-        $mesesPrimerSemestre = $totalPrimerSemestre > 0
-            ? ceil($totalPrimerSemestre / $valorMensual)
-            : 0;
+        $totalDebe = collect($filasEstadoCuenta)
+            ->where('estado', 'Debe')
+            ->sum('valor');
 
-        $mesesSegundoSemestre = $totalSegundoSemestre > 0
-            ? ceil($totalSegundoSemestre / $valorMensual)
-            : 0;
-
-        $pagoSemestralPrimero = $totalPrimerSemestre > 0
-            ? $totalPrimerSemestre - ($totalPrimerSemestre * 0.10)
-            : 0;
-
-        $pagoSemestralSegundo = $totalSegundoSemestre > 0
-            ? $totalSegundoSemestre - ($totalSegundoSemestre * 0.10)
-            : 0;
-
-        $pagoAnual = $totalGeneral > 0
-            ? $totalGeneral - ($totalGeneral * 0.30)
-            : 0;
+        $descuentoSemestral = $totalDebe > 0 ? round($totalDebe * 0.10) : 0;
+        $totalConDescuento = $totalDebe > 0 ? $totalDebe - $descuentoSemestral : 0;
 
         $numeroCertificado = 'CERT-' . now()->format('YmdHis') . '-' . $asociado->id;
 
@@ -190,26 +241,13 @@ class CertificadoController extends BaseApiController
             'usuario' => $usuario,
             'fechaGeneracion' => Carbon::now()->locale('es')->translatedFormat('d \d\e F \d\e Y'),
             'numeroCertificado' => $numeroCertificado,
-
             'anio' => $anio,
             'valorMensual' => $valorMensual,
-            'valorSemestre' => $valorSemestre,
-            'valorAnual' => $valorAnual,
-
+            'filasEstadoCuenta' => $filasEstadoCuenta,
             'totalPagado' => $totalPagado,
-            'pagadoPrimerSemestre' => $pagadoPrimerSemestre,
-            'pagadoSegundoSemestre' => $pagadoSegundoSemestre,
-
-            'totalPrimerSemestre' => $totalPrimerSemestre,
-            'totalSegundoSemestre' => $totalSegundoSemestre,
-            'totalGeneral' => $totalGeneral,
-
-            'mesesPrimerSemestre' => $mesesPrimerSemestre,
-            'mesesSegundoSemestre' => $mesesSegundoSemestre,
-
-            'pagoSemestralPrimero' => $pagoSemestralPrimero,
-            'pagoSemestralSegundo' => $pagoSemestralSegundo,
-            'pagoAnual' => $pagoAnual,
+            'totalDebe' => $totalDebe,
+            'descuentoSemestral' => $descuentoSemestral,
+            'totalConDescuento' => $totalConDescuento,
         ];
 
         $pdf = Pdf::loadView('pdf.estado-cuenta', $data)
@@ -218,8 +256,7 @@ class CertificadoController extends BaseApiController
         $contenidoPdf = $pdf->output();
 
         $nombreArchivo = 'certificados/estado-cuenta-' .
-            $asociado->id .
-            '-' .
+            $asociado->id . '-' .
             now()->format('YmdHis') .
             '.pdf';
 

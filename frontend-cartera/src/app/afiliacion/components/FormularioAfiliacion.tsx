@@ -148,9 +148,6 @@ export default function FormularioAfiliacion() {
   };
 
   return (
-    <>
-      <Navbar />
-
       <main className="min-h-screen bg-slate-100 px-4 py-6">
         <section className="mx-auto max-w-6xl rounded-2xl border border-slate-200 bg-white p-5 shadow-lg md:p-6">
           <header className="mb-5 border-b border-slate-200 pb-4">
@@ -777,6 +774,5 @@ export default function FormularioAfiliacion() {
           </form>
         </section>
       </main>
-    </>
   );
 }
