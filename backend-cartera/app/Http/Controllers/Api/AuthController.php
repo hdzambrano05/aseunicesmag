@@ -78,4 +78,35 @@ class AuthController extends BaseApiController
 
         return $this->success(null, 'Sesión cerrada correctamente');
     }
+
+    public function cambiarPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'password_actual' => 'required|string|min:6',
+            'password' => 'required|string|min:6|confirmed',
+        ], [
+            'password_actual.required' => 'La contraseña actual es obligatoria.',
+            'password.required' => 'La nueva contraseña es obligatoria.',
+            'password.confirmed' => 'La confirmación de la contraseña no coincide.',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->error('Datos inválidos', $validator->errors(), 422);
+        }
+
+        $usuario = $request->user();
+
+        if (!$usuario) {
+            return $this->error('Usuario no autenticado', null, 401);
+        }
+
+        if (!Hash::check($request->password_actual, $usuario->password_hash)) {
+            return $this->error('La contraseña actual no es correcta', null, 422);
+        }
+
+        $usuario->password_hash = Hash::make($request->password);
+        $usuario->save();
+
+        return $this->success(null, 'Contraseña actualizada correctamente');
+    }
 }

@@ -8,6 +8,7 @@ export type UsuarioCertificado = {
 };
 
 export type AsociadoCertificado = {
+  codigo_asociado: string;
   id: number;
   estado_membresia?: string;
   programa_academico?: string;

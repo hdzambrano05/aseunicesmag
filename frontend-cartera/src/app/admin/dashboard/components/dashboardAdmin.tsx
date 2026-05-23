@@ -212,71 +212,68 @@ export default function DashboardAdmin() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] px-3 py-4 sm:px-5 sm:py-5 lg:px-8 lg:py-6">
-      <section className="mx-auto max-w-7xl space-y-5">
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="relative border-b border-slate-200 px-5 py-5 sm:px-6 lg:px-7">
-            <div className="absolute inset-y-0 left-0 w-1.5 bg-[#1d4ed8]" />
+    <main className="min-h-screen bg-[#F6F9FC] px-6 py-8 text-[#07122F]">
+      <section className="mx-auto max-w-7xl space-y-6">
+        {/* Header */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-bold text-[#21409A]">
+                Panel administrativo
+              </p>
 
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-blue-700 sm:text-[11px]">
-                  Panel administrativo
-                </p>
+              <h1 className="mt-2 text-3xl font-black tracking-tight">
+                Verificación de afiliaciones
+              </h1>
 
-                <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-800 sm:text-3xl">
-                  Verificación de Afiliaciones
-                </h1>
-
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                  Administra las solicitudes de afiliación, revisa documentos y
-                  aprueba nuevos asociados.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={cargarSolicitudes}
-                disabled={loading}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1e3a8a] px-5 text-sm font-black text-white transition hover:bg-[#172554] disabled:cursor-not-allowed disabled:bg-slate-400"
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                Actualizar
-              </button>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+                Administra las solicitudes de afiliación, revisa documentos y
+                aprueba nuevos asociados.
+              </p>
             </div>
+
+            <button
+              type="button"
+              onClick={cargarSolicitudes}
+              disabled={loading}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#21409A] px-6 text-sm font-bold text-white shadow-sm transition hover:bg-[#183483] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Actualizar
+            </button>
           </div>
         </div>
 
+        {/* Mensajes */}
         {mensaje && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-700">
+          <div className="rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-700">
             {mensaje}
           </div>
         )}
 
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+          <div className="rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
             {error}
           </div>
         )}
 
         {loading ? (
-          <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex min-h-[300px] items-center justify-center rounded-3xl border border-slate-200 bg-white shadow-sm">
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-[#1e3a8a]" />
-
+              <Loader2 className="h-8 w-8 animate-spin text-[#21409A]" />
               <p className="text-sm font-bold text-slate-500">
                 Cargando solicitudes...
               </p>
             </div>
           </div>
         ) : solicitudes.length === 0 ? (
-          <div className="flex min-h-[320px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white shadow-sm">
+          <div className="flex min-h-[320px] items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white shadow-sm">
             <div className="flex max-w-md flex-col items-center text-center">
-              <div className="rounded-2xl bg-slate-100 p-4">
+              <div className="rounded-3xl bg-slate-100 p-4">
                 <Inbox className="h-8 w-8 text-slate-400" />
               </div>
 
@@ -291,22 +288,23 @@ export default function DashboardAdmin() {
             </div>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {solicitudes.map((solicitud) => (
               <article
                 key={solicitud.id}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300"
+                className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:border-slate-300"
               >
-                <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
+                {/* Encabezado solicitud */}
+                <div className="border-b border-slate-100 bg-white px-5 py-5 sm:px-6">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="min-w-0">
+                    <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-lg font-black text-slate-800">
+                        <h2 className="text-lg font-black text-[#07122F]">
                           {solicitud.usuario?.nombres}{" "}
                           {solicitud.usuario?.apellidos}
                         </h2>
 
-                        <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">
+                        <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
                           {solicitud.estado}
                         </span>
                       </div>
@@ -336,7 +334,7 @@ export default function DashboardAdmin() {
                         type="button"
                         onClick={() => aprobar(solicitud.id)}
                         disabled={procesandoId === solicitud.id}
-                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1e3a8a] px-5 text-sm font-black text-white transition hover:bg-[#172554] disabled:cursor-not-allowed disabled:bg-slate-400"
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#21409A] px-5 text-sm font-bold text-white transition hover:bg-[#183483] disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {procesandoId === solicitud.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -350,7 +348,7 @@ export default function DashboardAdmin() {
                         type="button"
                         onClick={() => rechazar(solicitud.id)}
                         disabled={procesandoId === solicitud.id}
-                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 text-sm font-black text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 text-sm font-bold text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         <X className="h-4 w-4" />
                         Rechazar
@@ -359,20 +357,20 @@ export default function DashboardAdmin() {
                   </div>
                 </div>
 
+                {/* Detalle */}
                 <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[1fr_340px]">
                   <div>
-                    <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+                    <h3 className="text-sm font-black uppercase tracking-[0.16em] text-slate-400">
                       Información del afiliado
                     </h3>
 
-                    <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
-                      <div className="grid border-b border-slate-200 bg-slate-50 px-5 py-4 sm:grid-cols-2">
+                    <div className="mt-4 overflow-hidden rounded-3xl border border-slate-200 bg-white">
+                      <div className="grid border-b border-slate-100 px-5 py-4 sm:grid-cols-2">
                         <div>
                           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Nombres
                           </p>
-
-                          <p className="mt-1 text-sm font-bold text-slate-800">
+                          <p className="mt-1 text-sm font-bold text-[#07122F]">
                             {solicitud.usuario?.nombres}
                           </p>
                         </div>
@@ -381,20 +379,18 @@ export default function DashboardAdmin() {
                           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Apellidos
                           </p>
-
-                          <p className="mt-1 text-sm font-bold text-slate-800">
+                          <p className="mt-1 text-sm font-bold text-[#07122F]">
                             {solicitud.usuario?.apellidos}
                           </p>
                         </div>
                       </div>
 
-                      <div className="grid border-b border-slate-200 px-5 py-4 sm:grid-cols-2">
+                      <div className="grid border-b border-slate-100 px-5 py-4 sm:grid-cols-2">
                         <div>
                           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Documento
                           </p>
-
-                          <p className="mt-1 text-sm font-bold text-slate-800">
+                          <p className="mt-1 text-sm font-bold text-[#07122F]">
                             {solicitud.usuario?.numero_documento}
                           </p>
                         </div>
@@ -403,7 +399,6 @@ export default function DashboardAdmin() {
                           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Correo electrónico
                           </p>
-
                           <p className="mt-1 break-all text-sm font-semibold text-slate-700">
                             {solicitud.usuario?.correo}
                           </p>
@@ -415,7 +410,6 @@ export default function DashboardAdmin() {
                           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Teléfono
                           </p>
-
                           <p className="mt-1 text-sm font-semibold text-slate-700">
                             {solicitud.usuario?.telefono || "No registra"}
                           </p>
@@ -425,8 +419,7 @@ export default function DashboardAdmin() {
                           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
                             Estado membresía
                           </p>
-
-                          <p className="mt-1 text-sm font-bold text-slate-800">
+                          <p className="mt-1 text-sm font-bold text-[#07122F]">
                             {solicitud.asociado?.estado_membresia ||
                               "Pendiente"}
                           </p>
@@ -436,7 +429,7 @@ export default function DashboardAdmin() {
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-black uppercase tracking-[0.18em] text-slate-400">
+                    <h3 className="text-sm font-black uppercase tracking-[0.16em] text-slate-400">
                       Documentos adjuntos
                     </h3>
 
@@ -452,20 +445,20 @@ export default function DashboardAdmin() {
                         return (
                           <div
                             key={doc.tipo}
-                            className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4"
+                            className="flex items-center justify-between rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4"
                           >
                             <div className="flex items-center gap-3">
-                              <div className="rounded-xl bg-white p-2 shadow-sm">
-                                <Icon className="h-5 w-5 text-[#1e3a8a]" />
+                              <div className="rounded-2xl bg-white p-2 shadow-sm">
+                                <Icon className="h-5 w-5 text-[#21409A]" />
                               </div>
 
                               <div>
-                                <p className="text-sm font-black text-slate-800">
+                                <p className="text-sm font-black text-[#07122F]">
                                   {doc.label.replace("Ver ", "")}
                                 </p>
 
                                 <p className="text-xs text-slate-500">
-                                  Documento cargado
+                                  {archivo ? "Documento cargado" : "Pendiente"}
                                 </p>
                               </div>
                             </div>
@@ -475,12 +468,12 @@ export default function DashboardAdmin() {
                                 href={archivo.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="rounded-lg bg-[#1e3a8a] px-4 py-2 text-xs font-black text-white transition hover:bg-[#172554]"
+                                className="rounded-full bg-[#07122F] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#21409A]"
                               >
                                 Ver
                               </a>
                             ) : (
-                              <span className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+                              <span className="rounded-full bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
                                 No cargado
                               </span>
                             )}

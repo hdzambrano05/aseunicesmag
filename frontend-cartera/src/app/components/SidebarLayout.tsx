@@ -11,14 +11,24 @@ import {
   ChevronRight,
   ChevronDown,
   Settings,
+  Eye,
+  EyeOff,
+  Save,
+  Loader2,
 } from "lucide-react";
 
 import { usePathname, useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 
 type UsuarioSesion = {
+  id?: number;
   nombre: string;
+  nombres?: string;
+  apellidos?: string;
   rol: string;
+  correo?: string;
+  numero_documento?: string;
+  telefono?: string;
 };
 
 type MenuItem = {
@@ -45,14 +55,22 @@ export default function SidebarLayout({
   const router = useRouter();
 
   const [sidebarAbierto, setSidebarAbierto] = useState(true);
-
   const [menuUsuario, setMenuUsuario] = useState(false);
+  const [modalPerfil, setModalPerfil] = useState(false);
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [guardandoPassword, setGuardandoPassword] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const [usuario, setUsuario] = useState<UsuarioSesion>({
     nombre: "Usuario",
     rol: "Usuario",
+  });
+
+  const [formPassword, setFormPassword] = useState({
+    password_actual: "",
+    password: "",
+    password_confirmation: "",
   });
 
   useEffect(() => {
@@ -62,12 +80,18 @@ export default function SidebarLayout({
       try {
         const user = JSON.parse(userStorage);
 
+        const nombres = user.nombres || "";
+        const apellidos = user.apellidos || "";
+
         setUsuario({
-          nombre:
-            `${user.nombres || ""} ${user.apellidos || ""}`.trim() ||
-            user.nombre ||
-            "Usuario",
+          id: user.id,
+          nombre: `${nombres} ${apellidos}`.trim() || user.nombre || "Usuario",
+          nombres,
+          apellidos,
           rol: user.rol?.nombre || user.rol || "Usuario",
+          correo: user.correo || "",
+          numero_documento: user.numero_documento || "",
+          telefono: user.telefono || "",
         });
       } catch {
         setUsuario({
@@ -99,6 +123,72 @@ export default function SidebarLayout({
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
     router.push("/login");
+  };
+
+  const abrirPerfil = () => {
+    setMenuUsuario(false);
+    setModalPerfil(true);
+  };
+
+  const limpiarPassword = () => {
+    setFormPassword({
+      password_actual: "",
+      password: "",
+      password_confirmation: "",
+    });
+  };
+
+  const cambiarPassword = async () => {
+    if (
+      !formPassword.password_actual ||
+      !formPassword.password ||
+      !formPassword.password_confirmation
+    ) {
+      alert("Completa todos los campos.");
+      return;
+    }
+
+    if (formPassword.password !== formPassword.password_confirmation) {
+      alert("La nueva contraseña no coincide.");
+      return;
+    }
+
+    try {
+      setGuardandoPassword(true);
+
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/perfil/cambiar-password`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(formPassword),
+        },
+      );
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message ||
+            data?.mensaje ||
+            "No se pudo actualizar la contraseña",
+        );
+      }
+
+      alert("Contraseña actualizada correctamente.");
+      limpiarPassword();
+      setModalPerfil(false);
+    } catch (error: any) {
+      alert(error.message || "Error al cambiar contraseña.");
+    } finally {
+      setGuardandoPassword(false);
+    }
   };
 
   return (
@@ -178,8 +268,7 @@ export default function SidebarLayout({
               const Icon = item.icon;
 
               const activo =
-                pathname === item.path ||
-                pathname.startsWith(item.path + "/");
+                pathname === item.path || pathname.startsWith(item.path + "/");
 
               return (
                 <li key={item.path}>
@@ -264,7 +353,7 @@ export default function SidebarLayout({
               <div className="absolute bottom-[78px] left-0 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
                 <button
                   type="button"
-                  onClick={() => router.push("/perfil")}
+                  onClick={abrirPerfil}
                   className="flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-blue-700"
                 >
                   <Settings className="h-4 w-4" />
@@ -292,6 +381,151 @@ export default function SidebarLayout({
       >
         <div className="px-5 py-8 pt-20 lg:px-10 lg:pt-8">{children}</div>
       </main>
+
+      {modalPerfil && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 px-7 py-5">
+              <div>
+                <p className="text-sm font-bold text-blue-700">Mi perfil</p>
+                <h2 className="text-2xl font-black text-slate-900">
+                  Información de usuario
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setModalPerfil(false)}
+                className="rounded-full bg-slate-100 p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="max-h-[75vh] space-y-6 overflow-y-auto p-7">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-black uppercase text-slate-400">
+                    Nombre
+                  </p>
+                  <p className="mt-1 font-bold text-slate-900">
+                    {usuario.nombre}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-black uppercase text-slate-400">
+                    Rol
+                  </p>
+                  <p className="mt-1 font-bold text-blue-700">{usuario.rol}</p>
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-black uppercase text-slate-400">
+                    Documento
+                  </p>
+                  <p className="mt-1 font-bold text-slate-900">
+                    {usuario.numero_documento || "No registra"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="text-xs font-black uppercase text-slate-400">
+                    Correo
+                  </p>
+                  <p className="mt-1 break-all font-bold text-slate-900">
+                    {usuario.correo || "No registra"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 p-4 md:col-span-2">
+                  <p className="text-xs font-black uppercase text-slate-400">
+                    Teléfono
+                  </p>
+                  <p className="mt-1 font-bold text-slate-900">
+                    {usuario.telefono || "No registra"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-slate-200 p-5">
+                <h3 className="text-lg font-black text-slate-900">
+                  Cambiar contraseña
+                </h3>
+
+                <div className="mt-4 grid gap-4">
+                  <input
+                    type={mostrarPassword ? "text" : "password"}
+                    placeholder="Contraseña actual"
+                    value={formPassword.password_actual}
+                    onChange={(e) =>
+                      setFormPassword({
+                        ...formPassword,
+                        password_actual: e.target.value,
+                      })
+                    }
+                    className="h-12 rounded-full border border-slate-200 bg-slate-50 px-5 text-sm font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  />
+
+                  <input
+                    type={mostrarPassword ? "text" : "password"}
+                    placeholder="Nueva contraseña"
+                    value={formPassword.password}
+                    onChange={(e) =>
+                      setFormPassword({
+                        ...formPassword,
+                        password: e.target.value,
+                      })
+                    }
+                    className="h-12 rounded-full border border-slate-200 bg-slate-50 px-5 text-sm font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  />
+
+                  <div className="relative">
+                    <input
+                      type={mostrarPassword ? "text" : "password"}
+                      placeholder="Confirmar nueva contraseña"
+                      value={formPassword.password_confirmation}
+                      onChange={(e) =>
+                        setFormPassword({
+                          ...formPassword,
+                          password_confirmation: e.target.value,
+                        })
+                      }
+                      className="h-12 w-full rounded-full border border-slate-200 bg-slate-50 px-5 pr-12 text-sm font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setMostrarPassword(!mostrarPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    >
+                      {mostrarPassword ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={cambiarPassword}
+                  disabled={guardandoPassword}
+                  className="mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-blue-700 px-7 text-sm font-bold text-white transition hover:bg-blue-800 disabled:opacity-60"
+                >
+                  {guardandoPassword ? (
+                    <Loader2 size={17} className="animate-spin" />
+                  ) : (
+                    <Save size={17} />
+                  )}
+                  {guardandoPassword ? "Guardando..." : "Guardar contraseña"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

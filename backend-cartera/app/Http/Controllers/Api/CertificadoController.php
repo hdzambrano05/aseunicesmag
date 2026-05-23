@@ -98,6 +98,7 @@ class CertificadoController extends BaseApiController
         $search = $request->get('search');
 
         $asociados = Asociado::with(['usuario', 'ciudad'])
+            ->where('estado_membresia', 'ACTIVO')
             ->when($search, function ($query) use ($search) {
                 $query->whereHas('usuario', function ($q) use ($search) {
                     $q->where('nombres', 'LIKE', "%{$search}%")
@@ -118,7 +119,10 @@ class CertificadoController extends BaseApiController
 
     public function generarEstadoCuenta(Request $request, int $asociadoId)
     {
-        $asociado = Asociado::with(['usuario', 'ciudad'])->find($asociadoId);
+        $asociado = Asociado::with(['usuario', 'ciudad'])
+            ->where('estado_membresia', 'ACTIVO')
+            ->find($asociadoId);
+
 
         if (!$asociado) {
             return $this->error('Asociado no encontrado', null, 404);

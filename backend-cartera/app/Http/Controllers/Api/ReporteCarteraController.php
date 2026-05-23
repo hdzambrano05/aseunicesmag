@@ -11,7 +11,6 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReporteCarteraController extends Controller
 {
@@ -23,6 +22,7 @@ class ReporteCarteraController extends Controller
         $estadosAprobados = ['APROBADO', 'APROBADA', 'PAGADO', 'PAGADA'];
 
         $asociados = DB::table('asociados as a')
+            ->where('a.estado_membresia', 'ACTIVO')
             ->join('usuarios as u', 'u.id', '=', 'a.usuario_id')
             ->leftJoin('ciudades as c', 'c.id', '=', 'a.ciudad_id')
             ->select(
@@ -142,10 +142,10 @@ class ReporteCarteraController extends Controller
                         ($r->periodo ?? '')
                 );
 
-                return strpos($texto, 'afiliacion') !== false ||
-                    strpos($texto, 'afiliación') !== false ||
-                    strpos($texto, 'inscripcion') !== false ||
-                    strpos($texto, 'inscripción') !== false;
+                return str_contains($texto, 'afiliacion') ||
+                    str_contains($texto, 'afiliación') ||
+                    str_contains($texto, 'inscripcion') ||
+                    str_contains($texto, 'inscripción');
             });
 
             $pagosSostenimiento = $recibosAsociado->filter(function ($r) {
@@ -155,10 +155,10 @@ class ReporteCarteraController extends Controller
                         ($r->periodo ?? '')
                 );
 
-                return strpos($texto, 'sostenimiento') !== false ||
-                    strpos($texto, 'mensual') !== false ||
-                    strpos($texto, 'semestral') !== false ||
-                    strpos($texto, 'cuota') !== false;
+                return str_contains($texto, 'sostenimiento') ||
+                    str_contains($texto, 'mensual') ||
+                    str_contains($texto, 'semestral') ||
+                    str_contains($texto, 'cuota');
             });
 
             $formaPago = $this->calcularFormaPago($recibosAsociado, $totalPagado);
@@ -248,12 +248,11 @@ class ReporteCarteraController extends Controller
 
         $filename = 'base-cartera-aseunicesmag-' . $anio . '-' . now()->format('YmdHis') . '.xlsx';
 
-        return new StreamedResponse(function () use ($spreadsheet) {
+        return response()->streamDownload(function () use ($spreadsheet) {
             $writer = new Xlsx($spreadsheet);
             $writer->save('php://output');
-        }, 200, [
+        }, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
             'Cache-Control' => 'max-age=0',
         ]);
     }
@@ -293,6 +292,7 @@ class ReporteCarteraController extends Controller
         }
 
         $inicioPagos = $col;
+
         $meses = [
             1 => 'ENERO',
             2 => 'FEBRERO',
@@ -315,9 +315,9 @@ class ReporteCarteraController extends Controller
             $sheet->mergeCells("{$c1}2:{$c3}2");
             $sheet->setCellValue("{$c1}2", $mes);
 
-            $sheet->setCellValueByColumnAndRow($col, 3, 'SOPORTE PAGO');
-            $sheet->setCellValueByColumnAndRow($col + 1, 3, 'FECHA');
-            $sheet->setCellValueByColumnAndRow($col + 2, 3, 'DESCRIPCIÓN');
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($col) . '3', 'SOPORTE PAGO');
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($col + 1) . '3', 'FECHA');
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($col + 2) . '3', 'DESCRIPCIÓN');
 
             $this->estiloVerde($sheet, "{$c1}2:{$c3}3");
 
@@ -342,7 +342,7 @@ class ReporteCarteraController extends Controller
         $sheet->setCellValue("{$c1}1", "FORMA DE PAGO {$anio}");
 
         foreach ($formaHeaders as $header) {
-            $sheet->setCellValueByColumnAndRow($col, 3, $header);
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($col) . '3', $header);
             $col++;
         }
 
@@ -365,7 +365,7 @@ class ReporteCarteraController extends Controller
         $sheet->setCellValue("{$a1}1", "PAGOS AFILIACIÓN {$anio}");
 
         foreach ($afiliacionHeaders as $header) {
-            $sheet->setCellValueByColumnAndRow($col, 3, $header);
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($col) . '3', $header);
             $col++;
         }
 
@@ -381,7 +381,7 @@ class ReporteCarteraController extends Controller
         $sheet->setCellValue("{$n1}1", 'NOVEDADES');
 
         foreach ($nHeaders as $header) {
-            $sheet->setCellValueByColumnAndRow($col, 3, $header);
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($col) . '3', $header);
             $col++;
         }
 
@@ -443,15 +443,15 @@ class ReporteCarteraController extends Controller
         foreach ($pagos as $pago) {
             $banco = mb_strtolower($pago->banco ?? '');
 
-            if (strpos($banco, 'nequi') !== false) {
+            if (str_contains($banco, 'nequi')) {
                 $forma['nequi'] = 'X';
-            } elseif (strpos($banco, 'efectivo') !== false) {
+            } elseif (str_contains($banco, 'efectivo')) {
                 $forma['efectivo'] = 'X';
             } elseif (
-                strpos($banco, 'bancolombia') !== false ||
-                strpos($banco, 'transferencia') !== false ||
-                strpos($banco, 'consignacion') !== false ||
-                strpos($banco, 'consignación') !== false
+                str_contains($banco, 'bancolombia') ||
+                str_contains($banco, 'transferencia') ||
+                str_contains($banco, 'consignacion') ||
+                str_contains($banco, 'consignación')
             ) {
                 $forma['consignacion'] = 'X';
             } elseif ($totalPagado > 0) {
