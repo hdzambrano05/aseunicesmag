@@ -18,21 +18,6 @@ export default function AsociadoLayout({
       icon: LayoutDashboard,
       path: "/asociado/dashboard",
     },
-    {
-      label: "Mis recibos",
-      icon: ReceiptText,
-      path: "/asociado/recibos",
-    },
-    {
-      label: "Notificaciones",
-      icon: Bell,
-      path: "/asociado/notificaciones",
-    },
-    {
-      label: "Mi perfil",
-      icon: User,
-      path: "/asociado/perfil",
-    },
   ];
 
   return (

@@ -11,6 +11,7 @@ import {
   subirReciboPago,
   obtenerMisRecibos,
 } from "@/services/recibosPagoService";
+import ModalMensaje, { TipoModalMensaje } from "../../components/ModalMensaje";
 
 type Modalidad = "MENSUAL" | "SEMESTRAL" | "ANUAL";
 
@@ -29,6 +30,20 @@ export default function DashboardAsociado() {
   const [obligacionSeleccionada, setObligacionSeleccionada] =
     useState<any>(null);
 
+  const [modalMensaje, setModalMensaje] = useState<{
+    abierto: boolean;
+    tipo: TipoModalMensaje;
+    titulo: string;
+    mensaje: string;
+    onConfirmar: null | (() => void);
+  }>({
+    abierto: false,
+    tipo: "info",
+    titulo: "",
+    mensaje: "",
+    onConfirmar: null,
+  });
+
   const [form, setForm] = useState({
     referencia_pago: "",
     valor_reportado: "",
@@ -37,6 +52,44 @@ export default function DashboardAsociado() {
     observacion_usuario: "",
     archivo: null as File | null,
   });
+
+  const cerrarModalMensaje = () => {
+    setModalMensaje({
+      abierto: false,
+      tipo: "info",
+      titulo: "",
+      mensaje: "",
+      onConfirmar: null,
+    });
+  };
+
+  const mostrarModal = (
+    tipo: Exclude<TipoModalMensaje, "confirm">,
+    titulo: string,
+    mensaje: string,
+  ) => {
+    setModalMensaje({
+      abierto: true,
+      tipo,
+      titulo,
+      mensaje,
+      onConfirmar: null,
+    });
+  };
+
+  const confirmarModal = (
+    titulo: string,
+    mensaje: string,
+    accion: () => void,
+  ) => {
+    setModalMensaje({
+      abierto: true,
+      tipo: "confirm",
+      titulo,
+      mensaje,
+      onConfirmar: accion,
+    });
+  };
 
   const tieneReciboAprobado = recibos.some(
     (recibo: any) => recibo.estado === "APROBADO",
@@ -47,7 +100,6 @@ export default function DashboardAsociado() {
   );
 
   const obligacionesPendientes = estadoPago?.obligaciones || [];
-
   const tieneObligacionesPendientes = obligacionesPendientes.length > 0;
 
   const hoy = new Date();
@@ -94,12 +146,27 @@ export default function DashboardAsociado() {
       setCargando(true);
 
       const usuarioStorage = localStorage.getItem("usuario");
-      if (!usuarioStorage) return;
+
+      if (!usuarioStorage) {
+        mostrarModal(
+          "warning",
+          "Sesión no encontrada",
+          "Debes iniciar sesión nuevamente.",
+        );
+        return;
+      }
 
       const usuario = JSON.parse(usuarioStorage);
       const id = usuario?.asociado?.id;
 
-      if (!id) return;
+      if (!id) {
+        mostrarModal(
+          "warning",
+          "Asociado no encontrado",
+          "No se encontró información del asociado.",
+        );
+        return;
+      }
 
       setAsociadoId(id);
 
@@ -113,28 +180,47 @@ export default function DashboardAsociado() {
       setSmmlv(smmlvData?.data || null);
     } catch (error) {
       console.error(error);
-      alert("Error al cargar información");
+      mostrarModal("error", "Error", "Error al cargar información.");
     } finally {
       setCargando(false);
     }
   };
 
   const anular = async (id: number) => {
-    if (!confirm("¿Seguro que deseas anular esta obligación?")) return;
+    confirmarModal(
+      "Anular obligación",
+      "¿Seguro que deseas anular esta obligación?",
+      async () => {
+        cerrarModalMensaje();
 
-    try {
-      const response = await anularObligacion(id);
+        try {
+          const response = await anularObligacion(id);
 
-      if (!response?.success) {
-        alert(response?.message || "No se pudo anular");
-        return;
-      }
+          if (!response?.success) {
+            mostrarModal(
+              "error",
+              "No se pudo anular",
+              response?.message || "No se pudo anular la obligación.",
+            );
+            return;
+          }
 
-      alert("Obligación anulada correctamente");
-      await cargarDatos();
-    } catch (error: any) {
-      alert(error?.message || "Error al anular obligación");
-    }
+          mostrarModal(
+            "success",
+            "Correcto",
+            "Obligación anulada correctamente.",
+          );
+
+          await cargarDatos();
+        } catch (error: any) {
+          mostrarModal(
+            "error",
+            "Error",
+            error?.message || "Error al anular obligación.",
+          );
+        }
+      },
+    );
   };
 
   useEffect(() => {
@@ -143,19 +229,27 @@ export default function DashboardAsociado() {
 
   const crearObligacionMembresia = async () => {
     if (!asociadoId) {
-      alert("No se encontró el asociado");
+      mostrarModal(
+        "warning",
+        "Asociado no encontrado",
+        "No se encontró el asociado.",
+      );
       return;
     }
 
     if (tieneObligacionesPendientes) {
-      alert(
+      mostrarModal(
+        "warning",
+        "Obligación pendiente",
         "Ya tienes una obligación pendiente. Primero debes pagarla o anularla.",
       );
       return;
     }
 
     if (tieneReciboPendiente) {
-      alert(
+      mostrarModal(
+        "warning",
+        "Recibo en revisión",
         "Ya tienes un recibo en revisión. Debes esperar aprobación del administrador.",
       );
       return;
@@ -172,15 +266,24 @@ export default function DashboardAsociado() {
       });
 
       if (!response?.success) {
-        alert(response?.message || "No se pudo generar la obligación");
+        mostrarModal(
+          "error",
+          "No se pudo generar",
+          response?.message || "No se pudo generar la obligación.",
+        );
         return;
       }
 
-      alert("Obligación generada correctamente");
+      mostrarModal("success", "Correcto", "Obligación generada correctamente.");
+
       await cargarDatos();
     } catch (error: any) {
       console.error(error);
-      alert(error?.message || "Error al generar la obligación");
+      mostrarModal(
+        "error",
+        "Error",
+        error?.message || "Error al generar la obligación.",
+      );
     } finally {
       setGenerando(false);
     }
@@ -210,12 +313,20 @@ export default function DashboardAsociado() {
     e.preventDefault();
 
     if (!obligacionSeleccionada) {
-      alert("No hay obligación seleccionada");
+      mostrarModal(
+        "warning",
+        "Obligación no seleccionada",
+        "No hay obligación seleccionada.",
+      );
       return;
     }
 
     if (!form.archivo) {
-      alert("Debes seleccionar una imagen o PDF del recibo");
+      mostrarModal(
+        "warning",
+        "Archivo requerido",
+        "Debes seleccionar una imagen o PDF del recibo.",
+      );
       return;
     }
 
@@ -234,16 +345,25 @@ export default function DashboardAsociado() {
       const response = await subirReciboPago(formData);
 
       if (!response?.success) {
-        alert(response?.message || "No se pudo guardar el recibo");
+        mostrarModal(
+          "error",
+          "No se pudo guardar",
+          response?.message || "No se pudo guardar el recibo.",
+        );
         return;
       }
 
-      alert("Recibo cargado correctamente. Queda pendiente de revisión.");
+      mostrarModal(
+        "success",
+        "Recibo cargado",
+        "Recibo cargado correctamente. Queda pendiente de revisión.",
+      );
+
       cerrarModal();
       await cargarDatos();
     } catch (error) {
       console.error(error);
-      alert("Error al cargar el recibo");
+      mostrarModal("error", "Error", "Error al cargar el recibo.");
     } finally {
       setGuardando(false);
     }
@@ -287,7 +407,7 @@ export default function DashboardAsociado() {
 
                 <div className="mt-2 flex items-center gap-3">
                   <div
-                    className={`h-3 w-3 rounded-full shrink-0 ${
+                    className={`h-3 w-3 shrink-0 rounded-full ${
                       tieneObligacionesPendientes
                         ? "bg-red-500"
                         : tieneReciboPendiente
@@ -518,7 +638,7 @@ export default function DashboardAsociado() {
             ) : (
               <div className="overflow-hidden rounded-2xl border border-slate-200">
                 <div className="overflow-x-auto">
-                  <table className="min-w-[760px] w-full text-sm">
+                  <table className="w-full min-w-[760px] text-sm">
                     <thead className="bg-slate-100 text-left text-xs uppercase tracking-wider text-slate-500">
                       <tr>
                         <th className="px-5 py-4 font-black">Concepto</th>
@@ -561,6 +681,7 @@ export default function DashboardAsociado() {
                           <td className="px-5 py-4">
                             <div className="flex justify-end gap-2">
                               <button
+                                type="button"
                                 onClick={() => anular(obligacion.id)}
                                 className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
                               >
@@ -568,6 +689,7 @@ export default function DashboardAsociado() {
                               </button>
 
                               <button
+                                type="button"
                                 onClick={() => abrirModalPago(obligacion)}
                                 className="rounded-lg bg-[#1e3a8a] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#172554]"
                               >
@@ -604,7 +726,7 @@ export default function DashboardAsociado() {
             ) : (
               <div className="overflow-hidden rounded-2xl border border-slate-200">
                 <div className="overflow-x-auto">
-                  <table className="min-w-[720px] w-full text-sm">
+                  <table className="w-full min-w-[720px] text-sm">
                     <thead className="bg-slate-100 text-left text-xs uppercase tracking-wider text-slate-500">
                       <tr>
                         <th className="px-5 py-4 font-black">Recibo</th>
@@ -664,7 +786,7 @@ export default function DashboardAsociado() {
         </section>
 
         {modalAbierto && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-3 backdrop-blur-sm sm:p-4">
             <div className="max-h-[95vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">
               <div className="border-b border-slate-200 bg-slate-50 px-5 py-5 sm:px-6">
                 <h2 className="text-xl font-black text-slate-800 sm:text-2xl">
@@ -760,6 +882,19 @@ export default function DashboardAsociado() {
             </div>
           </div>
         )}
+
+        <ModalMensaje
+          abierto={modalMensaje.abierto}
+          tipo={modalMensaje.tipo}
+          titulo={modalMensaje.titulo}
+          mensaje={modalMensaje.mensaje}
+          textoConfirmar={
+            modalMensaje.tipo === "confirm" ? "Sí, continuar" : "Aceptar"
+          }
+          textoCancelar="Cancelar"
+          onCerrar={cerrarModalMensaje}
+          onConfirmar={modalMensaje.onConfirmar || cerrarModalMensaje}
+        />
       </div>
     </div>
   );

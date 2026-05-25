@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   GraduationCap,
   LogOut,
@@ -20,15 +20,27 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 
+import { useAutoLogout } from "@/hooks/useAutoLogout";
+import ProtectedRoute from "@/components/ProtectedRoute";
+
+type RolUsuario =
+  | string
+  | {
+      id: number;
+      nombre: string;
+      descripcion?: string;
+      estado?: number;
+    };
+
 type UsuarioSesion = {
   id?: number;
-  nombre: string;
+  nombre?: string;
   nombres?: string;
   apellidos?: string;
-  rol: string;
   correo?: string;
   numero_documento?: string;
   telefono?: string;
+  rol?: RolUsuario;
 };
 
 type MenuItem = {
@@ -45,26 +57,25 @@ type SidebarLayoutProps = {
   menu: MenuItem[];
 };
 
-export default function SidebarLayout({
-  children,
-  titulo = "Panel",
-  subtitulo = "Sistema ASEUNICESMAG",
-  menu,
-}: SidebarLayoutProps) {
+export default function SidebarLayout({ children, menu }: SidebarLayoutProps) {
+  useAutoLogout();
+
   const pathname = usePathname();
   const router = useRouter();
 
-  const [sidebarAbierto, setSidebarAbierto] = useState(true);
-  const [menuUsuario, setMenuUsuario] = useState(false);
-  const [modalPerfil, setModalPerfil] = useState(false);
-  const [mostrarPassword, setMostrarPassword] = useState(false);
-  const [guardandoPassword, setGuardandoPassword] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [perfilOpen, setPerfilOpen] = useState(false);
+  const [modalConfigOpen, setModalConfigOpen] = useState(false);
 
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const [usuario, setUsuario] = useState<UsuarioSesion | null>(null);
 
-  const [usuario, setUsuario] = useState<UsuarioSesion>({
-    nombre: "Usuario",
-    rol: "Usuario",
+  const [formPerfil, setFormPerfil] = useState({
+    nombres: "",
+    apellidos: "",
+    correo: "",
+    telefono: "",
+    numero_documento: "",
   });
 
   const [formPassword, setFormPassword] = useState({
@@ -73,89 +84,165 @@ export default function SidebarLayout({
     password_confirmation: "",
   });
 
-  useEffect(() => {
-    const userStorage = localStorage.getItem("usuario");
+  const [verPass, setVerPass] = useState(false);
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false);
+  const [guardandoPassword, setGuardandoPassword] = useState(false);
+  const [mensaje, setMensaje] = useState("");
+  const [error, setError] = useState("");
 
-    if (userStorage) {
-      try {
-        const user = JSON.parse(userStorage);
-
-        const nombres = user.nombres || "";
-        const apellidos = user.apellidos || "";
-
-        setUsuario({
-          id: user.id,
-          nombre: `${nombres} ${apellidos}`.trim() || user.nombre || "Usuario",
-          nombres,
-          apellidos,
-          rol: user.rol?.nombre || user.rol || "Usuario",
-          correo: user.correo || "",
-          numero_documento: user.numero_documento || "",
-          telefono: user.telefono || "",
-        });
-      } catch {
-        setUsuario({
-          nombre: "Usuario",
-          rol: "Usuario",
-        });
-      }
-    }
-  }, []);
+  const perfilRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const cerrar = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setMenuUsuario(false);
-      }
-    };
+    const usuarioStorage = localStorage.getItem("usuario");
+    const token = localStorage.getItem("token");
 
-    document.addEventListener("mousedown", cerrar);
-
-    return () => {
-      document.removeEventListener("mousedown", cerrar);
-    };
-  }, []);
-
-  const cerrarSesion = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario");
-    router.push("/login");
-  };
-
-  const abrirPerfil = () => {
-    setMenuUsuario(false);
-    setModalPerfil(true);
-  };
-
-  const limpiarPassword = () => {
-    setFormPassword({
-      password_actual: "",
-      password: "",
-      password_confirmation: "",
-    });
-  };
-
-  const cambiarPassword = async () => {
-    if (
-      !formPassword.password_actual ||
-      !formPassword.password ||
-      !formPassword.password_confirmation
-    ) {
-      alert("Completa todos los campos.");
-      return;
-    }
-
-    if (formPassword.password !== formPassword.password_confirmation) {
-      alert("La nueva contraseña no coincide.");
+    if (!usuarioStorage || !token) {
+      router.replace("/login");
       return;
     }
 
     try {
-      setGuardandoPassword(true);
+      const usuarioParseado = JSON.parse(usuarioStorage) as UsuarioSesion;
+      setUsuario(usuarioParseado);
 
+      setFormPerfil({
+        nombres: usuarioParseado.nombres || usuarioParseado.nombre || "",
+        apellidos: usuarioParseado.apellidos || "",
+        correo: usuarioParseado.correo || "",
+        telefono: usuarioParseado.telefono || "",
+        numero_documento: usuarioParseado.numero_documento || "",
+      });
+    } catch {
+      localStorage.removeItem("token");
+      localStorage.removeItem("usuario");
+      router.replace("/login");
+    }
+  }, [router]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        perfilRef.current &&
+        !perfilRef.current.contains(event.target as Node)
+      ) {
+        setPerfilOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const nombreRol =
+    typeof usuario?.rol === "object"
+      ? usuario?.rol?.nombre
+      : usuario?.rol || "";
+
+  const rolUsuario = String(nombreRol).toUpperCase();
+  const esAdmin = rolUsuario === "ADMIN" || rolUsuario === "ADMINISTRADOR";
+
+  const menuFiltrado = useMemo(() => {
+    if (esAdmin) return menu;
+    return menu.filter((item) => !item.path.startsWith("/admin"));
+  }, [menu, esAdmin]);
+
+  const nombreUsuario =
+    usuario?.nombres ||
+    usuario?.nombre ||
+    `${usuario?.nombres ?? ""} ${usuario?.apellidos ?? ""}`.trim() ||
+    "Usuario";
+
+  const anchoSidebar = sidebarOpen ? "lg:pl-72" : "lg:pl-24";
+
+  const cerrarSesion = async () => {
+    const token = localStorage.getItem("token");
+
+    try {
+      if (token) {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+      }
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("usuario");
+      router.replace("/login");
+    }
+  };
+
+  const abrirConfiguracion = () => {
+    setPerfilOpen(false);
+    setMensaje("");
+    setError("");
+    setModalConfigOpen(true);
+  };
+
+  const actualizarPerfil = async () => {
+    setGuardandoPerfil(true);
+    setMensaje("");
+    setError("");
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/usuarios/${usuario?.id}/perfil`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formPerfil),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message || "No se pudo actualizar la información.",
+        );
+      }
+
+      const usuarioActualizado = {
+        ...usuario,
+        ...formPerfil,
+        nombre: formPerfil.nombres,
+      };
+
+      setUsuario(usuarioActualizado);
+      localStorage.setItem("usuario", JSON.stringify(usuarioActualizado));
+
+      setMensaje("Información actualizada correctamente.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Ocurrió un error al actualizar la información.",
+      );
+    } finally {
+      setGuardandoPerfil(false);
+    }
+  };
+
+  const actualizarPassword = async () => {
+    setGuardandoPassword(true);
+    setMensaje("");
+    setError("");
+
+    if (formPassword.password !== formPassword.password_confirmation) {
+      setError("La nueva contraseña y la confirmación no coinciden.");
+      setGuardandoPassword(false);
+      return;
+    }
+
+    try {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
@@ -163,369 +250,453 @@ export default function SidebarLayout({
         {
           method: "POST",
           headers: {
+            Authorization: `Bearer ${token}`,
             Accept: "application/json",
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(formPassword),
         },
       );
 
-      const data = await response.json().catch(() => null);
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data?.message ||
-            data?.mensaje ||
-            "No se pudo actualizar la contraseña",
-        );
+        throw new Error(data?.message || "No se pudo cambiar la contraseña.");
       }
 
-      alert("Contraseña actualizada correctamente.");
-      limpiarPassword();
-      setModalPerfil(false);
-    } catch (error: any) {
-      alert(error.message || "Error al cambiar contraseña.");
+      setFormPassword({
+        password_actual: "",
+        password: "",
+        password_confirmation: "",
+      });
+
+      setMensaje("Contraseña actualizada correctamente.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Ocurrió un error al cambiar la contraseña.",
+      );
     } finally {
       setGuardandoPassword(false);
     }
   };
 
+  const input =
+    "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100";
+
   return (
-    <div className="min-h-screen bg-slate-100">
-      <button
-        type="button"
-        onClick={() => setSidebarAbierto(true)}
-        className="fixed left-4 top-4 z-50 flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-lg ring-1 ring-slate-200 lg:hidden"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
+    <ProtectedRoute
+      rolesPermitidos={["ADMIN", "ADMINISTRADOR", "USUARIO", "ASOCIADO"]}
+    >
+      <div className="min-h-screen bg-slate-100">
+        {mobileOpen && (
+          <div
+            onClick={() => setMobileOpen(false)}
+            className="fixed inset-0 z-30 bg-slate-900/40 lg:hidden"
+          />
+        )}
 
-      {sidebarAbierto && (
-        <div
-          onClick={() => setSidebarAbierto(false)}
-          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden"
-        />
-      )}
-
-      <aside
-        className={`fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-slate-200 bg-white/95 px-4 py-5 shadow-2xl shadow-slate-900/10 backdrop-blur transition-all duration-300 lg:shadow-none ${
-          sidebarAbierto
-            ? "translate-x-0 lg:w-72"
-            : "-translate-x-full lg:w-24 lg:translate-x-0"
-        } w-72`}
-      >
-        <div className="mb-8 flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/25">
-              <GraduationCap className="h-6 w-6" />
-            </div>
-
-            {sidebarAbierto && (
-              <div className="min-w-0">
-                <h2 className="truncate text-base font-black text-slate-900">
-                  {titulo}
-                </h2>
-                <p className="truncate text-xs font-semibold text-slate-400">
-                  {subtitulo}
-                </p>
-              </div>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setSidebarAbierto(false)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 lg:hidden"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setSidebarAbierto(!sidebarAbierto)}
-          className="absolute -right-4 top-7 hidden h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-md transition hover:bg-blue-50 hover:text-blue-700 lg:flex"
+        <aside
+          className={`fixed left-0 top-0 z-40 h-screen border-r border-slate-200 bg-white shadow-xl transition-all duration-300 ${
+            sidebarOpen ? "w-72" : "w-24"
+          } ${
+            mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          }`}
         >
-          {sidebarAbierto ? (
-            <ChevronLeft className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-        </button>
-
-        <nav className="flex-1">
-          <p
-            className={`mb-3 px-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 ${
-              !sidebarAbierto && "hidden"
-            }`}
-          >
-            Menú principal
-          </p>
-
-          <ul className="space-y-2">
-            {menu.map((item) => {
-              const Icon = item.icon;
-
-              const activo =
-                pathname === item.path || pathname.startsWith(item.path + "/");
-
-              return (
-                <li key={item.path}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      router.push(item.path);
-
-                      if (window.innerWidth < 1024) {
-                        setSidebarAbierto(false);
-                      }
-                    }}
-                    title={!sidebarAbierto ? item.label : undefined}
-                    className={`group flex w-full items-center rounded-2xl px-4 py-3 text-sm font-black transition ${
-                      sidebarAbierto ? "justify-between" : "justify-center"
-                    } ${
-                      activo
-                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/20"
-                        : "text-slate-500 hover:bg-slate-100 hover:text-blue-700"
-                    }`}
-                  >
-                    <span className="flex items-center gap-3">
-                      <Icon className="h-5 w-5 shrink-0" />
-                      {sidebarAbierto && <span>{item.label}</span>}
-                    </span>
-
-                    {sidebarAbierto && Number(item.badge) > 0 && (
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-black ${
-                          activo
-                            ? "bg-white/20 text-white"
-                            : "bg-blue-600 text-white"
-                        }`}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
-        <div className="border-t border-slate-200 pt-4">
-          <div className="relative" ref={dropdownRef}>
-            <button
-              type="button"
-              onClick={() => setMenuUsuario(!menuUsuario)}
-              className={`mb-3 flex w-full items-center gap-3 rounded-3xl bg-slate-50 p-3 ring-1 ring-slate-100 transition hover:bg-slate-100 ${
-                !sidebarAbierto ? "justify-center" : "justify-between"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
-                  <User className="h-5 w-5" />
+          <div className="flex h-full flex-col">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
+              <div
+                className={`flex items-center gap-3 ${
+                  sidebarOpen ? "opacity-100" : "hidden"
+                }`}
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-700 text-white shadow-lg">
+                  <GraduationCap className="h-6 w-6" />
                 </div>
 
-                {sidebarAbierto && (
-                  <div className="min-w-0 text-left">
-                    <p className="truncate text-sm font-black text-slate-800">
-                      {usuario.nombre}
-                    </p>
-
-                    <p className="truncate text-xs font-semibold text-slate-500">
-                      {usuario.rol}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {sidebarAbierto && (
-                <ChevronDown
-                  className={`h-4 w-4 text-slate-400 transition ${
-                    menuUsuario ? "rotate-180" : ""
-                  }`}
-                />
-              )}
-            </button>
-
-            {menuUsuario && sidebarAbierto && (
-              <div className="absolute bottom-[78px] left-0 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-                <button
-                  type="button"
-                  onClick={abrirPerfil}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-blue-700"
-                >
-                  <Settings className="h-4 w-4" />
-                  Mi perfil
-                </button>
-
-                <button
-                  type="button"
-                  onClick={cerrarSesion}
-                  className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-600"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Cerrar sesión
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </aside>
-
-      <main
-        className={`min-h-screen transition-all duration-300 ${
-          sidebarAbierto ? "lg:pl-72" : "lg:pl-24"
-        }`}
-      >
-        <div className="px-5 py-8 pt-20 lg:px-10 lg:pt-8">{children}</div>
-      </main>
-
-      {modalPerfil && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/40 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-7 py-5">
-              <div>
-                <p className="text-sm font-bold text-blue-700">Mi perfil</p>
-                <h2 className="text-2xl font-black text-slate-900">
-                  Información de usuario
-                </h2>
+                <div>
+                  <h1 className="text-sm font-black text-slate-900">
+                    ASEUNICESMAG
+                  </h1>
+                  <p className="text-xs text-slate-500">
+                    {esAdmin ? "Panel Administrativo" : "Panel de Usuario"}
+                  </p>
+                </div>
               </div>
 
               <button
                 type="button"
-                onClick={() => setModalPerfil(false)}
-                className="rounded-full bg-slate-100 p-2 text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="hidden rounded-xl border border-slate-200 bg-white p-2 text-slate-600 transition hover:bg-slate-100 lg:flex"
               >
-                <X size={20} />
+                {sidebarOpen ? (
+                  <ChevronLeft className="h-5 w-5" />
+                ) : (
+                  <ChevronRight className="h-5 w-5" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 transition hover:bg-slate-100 lg:hidden"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="max-h-[75vh] space-y-6 overflow-y-auto p-7">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-xs font-black uppercase text-slate-400">
-                    Nombre
-                  </p>
-                  <p className="mt-1 font-bold text-slate-900">
-                    {usuario.nombre}
-                  </p>
-                </div>
+            <div className="flex-1 overflow-y-auto px-3 py-4">
+              <div className="space-y-2">
+                {menuFiltrado.map((item) => {
+                  const active =
+                    pathname === item.path ||
+                    pathname.startsWith(`${item.path}/`);
 
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-xs font-black uppercase text-slate-400">
-                    Rol
-                  </p>
-                  <p className="mt-1 font-bold text-blue-700">{usuario.rol}</p>
-                </div>
+                  return (
+                    <button
+                      key={item.path}
+                      type="button"
+                      onClick={() => {
+                        setMobileOpen(false);
+                        router.push(item.path);
+                      }}
+                      className={`group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-all duration-200 ${
+                        active
+                          ? "bg-blue-700 text-white shadow-lg"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
+                    >
+                      <item.icon className="h-5 w-5 shrink-0" />
 
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-xs font-black uppercase text-slate-400">
-                    Documento
-                  </p>
-                  <p className="mt-1 font-bold text-slate-900">
-                    {usuario.numero_documento || "No registra"}
-                  </p>
-                </div>
+                      {sidebarOpen && (
+                        <>
+                          <span className="flex-1 text-sm font-semibold">
+                            {item.label}
+                          </span>
 
-                <div className="rounded-2xl bg-slate-50 p-4">
-                  <p className="text-xs font-black uppercase text-slate-400">
-                    Correo
-                  </p>
-                  <p className="mt-1 break-all font-bold text-slate-900">
-                    {usuario.correo || "No registra"}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 p-4 md:col-span-2">
-                  <p className="text-xs font-black uppercase text-slate-400">
-                    Teléfono
-                  </p>
-                  <p className="mt-1 font-bold text-slate-900">
-                    {usuario.telefono || "No registra"}
-                  </p>
-                </div>
+                          {item.badge !== undefined && item.badge > 0 && (
+                            <span
+                              className={`rounded-full px-2 py-1 text-[10px] font-black ${
+                                active
+                                  ? "bg-white text-blue-700"
+                                  : "bg-blue-100 text-blue-700"
+                              }`}
+                            >
+                              {item.badge}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
+            </div>
 
-              <div className="rounded-3xl border border-slate-200 p-5">
-                <h3 className="text-lg font-black text-slate-900">
-                  Cambiar contraseña
-                </h3>
+            <div className="border-t border-slate-200 p-4">
+              <div className="relative" ref={perfilRef}>
+                <button
+                  type="button"
+                  onClick={() => setPerfilOpen(!perfilOpen)}
+                  className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 transition hover:bg-slate-100"
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-700 text-white shadow-md">
+                    <User className="h-5 w-5" />
+                  </div>
 
-                <div className="mt-4 grid gap-4">
-                  <input
-                    type={mostrarPassword ? "text" : "password"}
-                    placeholder="Contraseña actual"
-                    value={formPassword.password_actual}
-                    onChange={(e) =>
-                      setFormPassword({
-                        ...formPassword,
-                        password_actual: e.target.value,
-                      })
-                    }
-                    className="h-12 rounded-full border border-slate-200 bg-slate-50 px-5 text-sm font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                  />
+                  {sidebarOpen && (
+                    <>
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-bold text-slate-900">
+                          {nombreUsuario}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {nombreRol || "Sin rol"}
+                        </p>
+                      </div>
 
-                  <input
-                    type={mostrarPassword ? "text" : "password"}
-                    placeholder="Nueva contraseña"
-                    value={formPassword.password}
-                    onChange={(e) =>
-                      setFormPassword({
-                        ...formPassword,
-                        password: e.target.value,
-                      })
-                    }
-                    className="h-12 rounded-full border border-slate-200 bg-slate-50 px-5 text-sm font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                  />
+                      <ChevronDown className="h-4 w-4 text-slate-500" />
+                    </>
+                  )}
+                </button>
 
-                  <div className="relative">
-                    <input
-                      type={mostrarPassword ? "text" : "password"}
-                      placeholder="Confirmar nueva contraseña"
-                      value={formPassword.password_confirmation}
-                      onChange={(e) =>
-                        setFormPassword({
-                          ...formPassword,
-                          password_confirmation: e.target.value,
-                        })
-                      }
-                      className="h-12 w-full rounded-full border border-slate-200 bg-slate-50 px-5 pr-12 text-sm font-semibold outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
-                    />
+                {perfilOpen && (
+                  <div className="absolute bottom-20 left-0 w-full rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl">
+                    <button
+                      type="button"
+                      onClick={abrirConfiguracion}
+                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                    >
+                      <Settings className="h-4 w-4" />
+                      Configuración
+                    </button>
 
                     <button
                       type="button"
-                      onClick={() => setMostrarPassword(!mostrarPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+                      onClick={cerrarSesion}
+                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50"
                     >
-                      {mostrarPassword ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
+                      <LogOut className="h-4 w-4" />
+                      Cerrar sesión
                     </button>
                   </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <div
+          className={`min-h-screen transition-all duration-300 ${anchoSidebar}`}
+        >
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="fixed left-4 top-4 z-20 rounded-2xl bg-blue-700 p-3 text-white shadow-lg lg:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          <main className="min-h-screen p-5">{children}</main>
+        </div>
+
+        {modalConfigOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 backdrop-blur-sm">
+            <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-6 py-5">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-blue-700">
+                    Configuración
+                  </p>
+                  <h2 className="text-2xl font-black text-slate-900">
+                    Mi perfil
+                  </h2>
                 </div>
 
                 <button
                   type="button"
-                  onClick={cambiarPassword}
-                  disabled={guardandoPassword}
-                  className="mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-blue-700 px-7 text-sm font-bold text-white transition hover:bg-blue-800 disabled:opacity-60"
+                  onClick={() => setModalConfigOpen(false)}
+                  className="rounded-2xl border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100"
                 >
-                  {guardandoPassword ? (
-                    <Loader2 size={17} className="animate-spin" />
-                  ) : (
-                    <Save size={17} />
-                  )}
-                  {guardandoPassword ? "Guardando..." : "Guardar contraseña"}
+                  <X className="h-5 w-5" />
                 </button>
               </div>
+
+              <div className="grid gap-6 p-6 lg:grid-cols-2">
+                <section className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 className="text-lg font-black text-slate-900">
+                    Información personal
+                  </h3>
+                  <p className="mb-5 text-sm text-slate-500">
+                    Actualiza tus datos principales.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-1 block text-xs font-black uppercase text-slate-500">
+                        Nombres
+                      </label>
+                      <input
+                        className={input}
+                        value={formPerfil.nombres}
+                        onChange={(e) =>
+                          setFormPerfil({
+                            ...formPerfil,
+                            nombres: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-black uppercase text-slate-500">
+                        Apellidos
+                      </label>
+                      <input
+                        className={input}
+                        value={formPerfil.apellidos}
+                        onChange={(e) =>
+                          setFormPerfil({
+                            ...formPerfil,
+                            apellidos: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-black uppercase text-slate-500">
+                        Correo
+                      </label>
+                      <input
+                        type="email"
+                        className={input}
+                        value={formPerfil.correo}
+                        onChange={(e) =>
+                          setFormPerfil({
+                            ...formPerfil,
+                            correo: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-black uppercase text-slate-500">
+                        Teléfono
+                      </label>
+                      <input
+                        className={input}
+                        value={formPerfil.telefono}
+                        onChange={(e) =>
+                          setFormPerfil({
+                            ...formPerfil,
+                            telefono: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-black uppercase text-slate-500">
+                        Documento
+                      </label>
+                      <input
+                        className={input}
+                        value={formPerfil.numero_documento}
+                        onChange={(e) =>
+                          setFormPerfil({
+                            ...formPerfil,
+                            numero_documento: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={actualizarPerfil}
+                      disabled={guardandoPerfil}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 px-5 py-3 text-sm font-black text-white shadow-lg transition hover:bg-blue-800 disabled:opacity-60"
+                    >
+                      {guardandoPerfil ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      Guardar información
+                    </button>
+                  </div>
+                </section>
+
+                <section className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 className="text-lg font-black text-slate-900">
+                    Cambiar contraseña
+                  </h3>
+                  <p className="mb-5 text-sm text-slate-500">
+                    Ingresa tu contraseña actual y la nueva contraseña.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-1 block text-xs font-black uppercase text-slate-500">
+                        Contraseña actual
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={verPass ? "text" : "password"}
+                          className={`${input} pr-12`}
+                          value={formPassword.password_actual}
+                          onChange={(e) =>
+                            setFormPassword({
+                              ...formPassword,
+                              password_actual: e.target.value,
+                            })
+                          }
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setVerPass(!verPass)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+                        >
+                          {verPass ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-black uppercase text-slate-500">
+                        Nueva contraseña
+                      </label>
+                      <input
+                        type={verPass ? "text" : "password"}
+                        className={input}
+                        value={formPassword.password}
+                        onChange={(e) =>
+                          setFormPassword({
+                            ...formPassword,
+                            password: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-black uppercase text-slate-500">
+                        Confirmar contraseña
+                      </label>
+                      <input
+                        type={verPass ? "text" : "password"}
+                        className={input}
+                        value={formPassword.password_confirmation}
+                        onChange={(e) =>
+                          setFormPassword({
+                            ...formPassword,
+                            password_confirmation: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={actualizarPassword}
+                      disabled={guardandoPassword}
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-lg transition hover:bg-slate-800 disabled:opacity-60"
+                    >
+                      {guardandoPassword ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      Cambiar contraseña
+                    </button>
+                  </div>
+                </section>
+              </div>
+
+              {(mensaje || error) && (
+                <div className="px-6 pb-6">
+                  <div
+                    className={`rounded-2xl px-4 py-3 text-sm font-bold ${
+                      mensaje
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-red-50 text-red-700"
+                    }`}
+                  >
+                    {mensaje || error}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </ProtectedRoute>
   );
 }

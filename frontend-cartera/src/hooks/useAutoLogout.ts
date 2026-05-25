@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const TIEMPO_INACTIVIDAD = 1000 * 60 * 30; // 30 minutos
 
 export function useAutoLogout() {
   const router = useRouter();
-  const timer = useRef<NodeJS.Timeout | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const cerrarSesion = async () => {
+  const cerrarSesion = useCallback(async () => {
     const token = localStorage.getItem("token");
 
     try {
@@ -24,15 +24,15 @@ export function useAutoLogout() {
       }
     } catch (error) {
       console.error("Error cerrando sesión:", error);
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("usuario");
+
+      router.replace("/login");
     }
+  }, [router]);
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario");
-
-    router.replace("/login");
-  };
-
-  const reiniciarTemporizador = () => {
+  const reiniciarTemporizador = useCallback(() => {
     if (timer.current) {
       clearTimeout(timer.current);
     }
@@ -40,10 +40,23 @@ export function useAutoLogout() {
     timer.current = setTimeout(() => {
       cerrarSesion();
     }, TIEMPO_INACTIVIDAD);
-  };
+  }, [cerrarSesion]);
 
   useEffect(() => {
-    const eventos = ["mousemove", "keydown", "click", "scroll", "touchstart"];
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      return;
+    }
+
+    const eventos = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "click",
+      "scroll",
+      "touchstart",
+    ];
 
     eventos.forEach((evento) => {
       window.addEventListener(evento, reiniciarTemporizador);
@@ -60,5 +73,5 @@ export function useAutoLogout() {
         clearTimeout(timer.current);
       }
     };
-  }, []);
+  }, [reiniciarTemporizador]);
 }

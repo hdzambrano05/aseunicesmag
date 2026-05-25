@@ -46,4 +46,9 @@ class SolicitudAfiliacion extends Model
         return $this->hasMany(ArchivoAdjunto::class, 'referencia_id')
             ->where('modulo', 'afiliacion');
     }
+
+    public function referido()
+    {
+        return $this->hasOne(SolicitudReferido::class, 'solicitud_afiliacion_id');
+    }
 }

@@ -164,7 +164,7 @@
         <table class="sin-borde header">
             <tr>
                 <td class="logo" style="width: 20%;">
-                    <img src="{{ public_path('images/logo-aseunicesmag.png') }}">
+                    <img src="{{ public_path('logo/logo_oficial.png') }}">
                 </td>
 
                 <td style="width: 60%;">
@@ -177,7 +177,7 @@
                 </td>
 
                 <td class="logo" style="width: 20%;">
-                    <img src="{{ public_path('images/logo-soy-unicesmag.png') }}">
+                    <img src="{{ public_path('logo/logo_oficial.png') }}">
                 </td>
             </tr>
         </table>

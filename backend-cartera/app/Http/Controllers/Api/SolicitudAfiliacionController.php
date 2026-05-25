@@ -13,6 +13,7 @@ use App\Models\SmmlvHistorico;
 use App\Models\SolicitudAfiliacion;
 use App\Models\TipoObligacion;
 use App\Models\Usuario;
+use App\Models\SolicitudReferido;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -206,6 +207,18 @@ class SolicitudAfiliacionController extends BaseApiController
                 'observacion_admin' => null,
                 'aprobado_por' => null,
                 'fecha_revision' => null,
+            ]);
+
+            SolicitudReferido::create([
+                'solicitud_afiliacion_id' => $solicitud->id,
+
+                'nombre_referente' => $request->referido_por,
+
+                'documento_referente' => $request->documento_referido,
+
+                'relacion_referente' => $request->relacion_referido,
+
+                'motivacion_afiliacion' => $request->motivacion_afiliacion,
             ]);
 
             /*

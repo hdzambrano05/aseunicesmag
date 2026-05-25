@@ -128,7 +128,7 @@
     <table>
         <tr>
             <td style="width: 16%; text-align:center;">
-                {{-- <img src="{{ public_path('logo.png') }}" style="width:55px;"> --}}
+                <img src="{{ public_path('logo/logo_oficial.png') }}" style="width:55px;">
             </td>
             <td style="width: 48%;" class="header-title">
                 ASOCIACIÓN DE EGRESADOS UNIVERSIDAD<br>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 
 type Props = {
@@ -14,36 +14,81 @@ export default function FirmaForm({ setFirmaBase64 }: Props) {
   const [modoFirma, setModoFirma] = useState<"dibujar" | "subir">("dibujar");
   const [firmaGuardada, setFirmaGuardada] = useState(false);
 
-  const ajustarCanvas = () => {
+  const guardarFirmaDibujada = useCallback(() => {
+    if (!firmaRef.current || firmaRef.current.isEmpty()) {
+      setFirmaBase64("");
+      setFirmaGuardada(false);
+      return;
+    }
+
+    const firma = firmaRef.current.getTrimmedCanvas().toDataURL("image/png");
+    setFirmaBase64(firma);
+    setFirmaGuardada(true);
+  }, [setFirmaBase64]);
+
+  const ajustarCanvas = useCallback(() => {
     const canvas = firmaRef.current?.getCanvas();
     const contenedor = contenedorRef.current;
 
     if (!canvas || !contenedor) return;
 
+    const ancho = contenedor.clientWidth;
+
+    if (ancho <= 0) return;
+
+    const alto = 180;
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    const ancho = contenedor.offsetWidth;
-    const alto = 170;
+
+    const firmaAnterior =
+      firmaRef.current && !firmaRef.current.isEmpty()
+        ? firmaRef.current.toDataURL("image/png")
+        : null;
 
     canvas.width = ancho * ratio;
     canvas.height = alto * ratio;
-    canvas.getContext("2d")?.scale(ratio, ratio);
 
     canvas.style.width = `${ancho}px`;
     canvas.style.height = `${alto}px`;
 
-    firmaRef.current?.clear();
-    setFirmaBase64("");
-    setFirmaGuardada(false);
-  };
-
-  useEffect(() => {
-    if (modoFirma === "dibujar") {
-      setTimeout(ajustarCanvas, 80);
-      window.addEventListener("resize", ajustarCanvas);
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     }
 
-    return () => window.removeEventListener("resize", ajustarCanvas);
-  }, [modoFirma]);
+    if (firmaAnterior) {
+      firmaRef.current?.fromDataURL(firmaAnterior);
+      setTimeout(guardarFirmaDibujada, 50);
+    } else {
+      firmaRef.current?.clear();
+    }
+  }, [guardarFirmaDibujada]);
+
+  useEffect(() => {
+    if (modoFirma !== "dibujar") return;
+
+    const iniciar = () => {
+      requestAnimationFrame(() => {
+        ajustarCanvas();
+      });
+    };
+
+    iniciar();
+
+    const observer = new ResizeObserver(() => {
+      iniciar();
+    });
+
+    if (contenedorRef.current) {
+      observer.observe(contenedorRef.current);
+    }
+
+    window.addEventListener("resize", iniciar);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", iniciar);
+    };
+  }, [modoFirma, ajustarCanvas]);
 
   const limpiarFirma = () => {
     firmaRef.current?.clear();
@@ -51,19 +96,9 @@ export default function FirmaForm({ setFirmaBase64 }: Props) {
     setFirmaGuardada(false);
   };
 
-  const guardarFirmaDibujada = () => {
-    if (!firmaRef.current || firmaRef.current.isEmpty()) {
-      alert("Por favor dibuje su firma.");
-      return;
-    }
-
-    const firma = firmaRef.current.getTrimmedCanvas().toDataURL("image/png");
-    setFirmaBase64(firma);
-    setFirmaGuardada(true);
-  };
-
   const subirFirma = (e: React.ChangeEvent<HTMLInputElement>) => {
     const archivo = e.target.files?.[0];
+
     if (!archivo) return;
 
     const reader = new FileReader();
@@ -98,31 +133,35 @@ export default function FirmaForm({ setFirmaBase64 }: Props) {
       <div className="mb-4 grid grid-cols-2 rounded-lg border border-slate-200 bg-slate-50 p-1">
         <button
           type="button"
+          onClick={() => {
+            setModoFirma("dibujar");
+            setFirmaBase64("");
+            setFirmaGuardada(false);
+
+            setTimeout(() => {
+              ajustarCanvas();
+            }, 100);
+          }}
           className={`rounded-md px-3 py-2 text-xs font-semibold transition ${
             modoFirma === "dibujar"
               ? "bg-blue-700 text-white shadow-sm"
               : "text-slate-600 hover:bg-white"
           }`}
-          onClick={() => {
-            setModoFirma("dibujar");
-            setFirmaBase64("");
-            setFirmaGuardada(false);
-          }}
         >
           Dibujar firma
         </button>
 
         <button
           type="button"
+          onClick={() => {
+            setModoFirma("subir");
+            limpiarFirma();
+          }}
           className={`rounded-md px-3 py-2 text-xs font-semibold transition ${
             modoFirma === "subir"
               ? "bg-blue-700 text-white shadow-sm"
               : "text-slate-600 hover:bg-white"
           }`}
-          onClick={() => {
-            setModoFirma("subir");
-            limpiarFirma();
-          }}
         >
           Subir imagen
         </button>
@@ -132,22 +171,24 @@ export default function FirmaForm({ setFirmaBase64 }: Props) {
         <div>
           <div
             ref={contenedorRef}
-            className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-2"
+            className="w-full rounded-lg border border-dashed border-slate-300 bg-slate-50 p-2"
           >
             <SignatureCanvas
               ref={firmaRef}
               penColor="#0f172a"
               minWidth={1}
               maxWidth={2.5}
+              onEnd={guardarFirmaDibujada}
               canvasProps={{
                 className:
-                  "block w-full cursor-crosshair rounded-md bg-white shadow-inner touch-none",
+                  "block w-full cursor-crosshair rounded-md bg-white shadow-inner",
               }}
             />
           </div>
 
           <p className="mt-2 text-xs text-slate-500">
-            Dibuje dentro del recuadro blanco.
+            Dibuje dentro del recuadro blanco. La firma se guarda
+            automáticamente.
           </p>
 
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -156,7 +197,7 @@ export default function FirmaForm({ setFirmaBase64 }: Props) {
               onClick={guardarFirmaDibujada}
               className="rounded-lg bg-blue-700 px-5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-800"
             >
-              Guardar firma
+              Confirmar firma
             </button>
 
             <button
