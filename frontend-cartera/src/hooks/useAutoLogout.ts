@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-const TIEMPO_INACTIVIDAD = 1000 * 60 * 30; // 30 minutos
+const TIEMPO_INACTIVIDAD = 1000 * 60 * 30;
 
 export function useAutoLogout() {
   const router = useRouter();
