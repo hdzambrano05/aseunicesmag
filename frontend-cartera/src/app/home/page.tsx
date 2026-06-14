@@ -113,115 +113,6 @@ export default function HomePage() {
       <Navbar />
 
       <main className="min-h-screen bg-[#f5f7fb]">
-        {/* HERO */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#bfdbfe,transparent_35%),radial-gradient(circle_at_bottom_right,#cffafe,transparent_25%)]" />
-
-          <div className="relative mx-auto grid max-w-7xl gap-14 px-6 py-16 lg:grid-cols-[1.05fr_.95fr] lg:items-center lg:py-24">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-black text-blue-800 shadow-sm">
-                <Landmark className="h-4 w-4" />
-                Asociación de Egresados UNICESMAG
-              </div>
-
-              <h1 className="mt-8 max-w-4xl text-5xl font-black leading-tight tracking-tight text-slate-950 md:text-6xl">
-                Beneficios y gestión digital para asociados
-              </h1>
-
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-                Una plataforma moderna para afiliaciones, convenios, eventos,
-                pagos y servicios institucionales.
-              </p>
-
-              <div className="mt-10 flex flex-wrap gap-4">
-                <Link
-                  href="/afiliacion"
-                  className="inline-flex items-center gap-2 rounded-full bg-blue-800 px-8 py-4 text-sm font-black text-white shadow-xl shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-blue-900"
-                >
-                  Afiliarme ahora
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-
-                <Link
-                  href="/login"
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-8 py-4 text-sm font-black text-slate-700 transition hover:border-blue-700 hover:text-blue-800"
-                >
-                  Iniciar sesión
-                </Link>
-              </div>
-
-              <div className="mt-14 grid max-w-2xl grid-cols-3 gap-4">
-                {[
-                  ["100%", "Proceso digital"],
-                  ["24/7", "Acceso disponible"],
-                  ["Seguro", "Control por rol"],
-                ].map(([numero, texto]) => (
-                  <div
-                    key={texto}
-                    className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50"
-                  >
-                    <p className="text-3xl font-black text-blue-900">
-                      {numero}
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-500">
-                      {texto}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* EVENTOS */}
-            <div className="relative">
-              <div className="absolute -inset-5 rounded-[3rem] bg-blue-900/10 blur-2xl" />
-
-              <div className="relative overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-2xl shadow-slate-900/10">
-                <div className="bg-gradient-to-r from-blue-950 to-blue-700 px-8 py-7 text-white">
-                  <p className="text-sm font-bold text-blue-100">
-                    Próximos eventos
-                  </p>
-
-                  <h2 className="mt-2 text-3xl font-black">
-                    XIII Asamblea General
-                  </h2>
-                </div>
-
-                <div className="space-y-6 p-8">
-                  <div className="flex gap-5">
-                    <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-blue-950 text-white">
-                      <span className="text-xs font-bold">MAR</span>
-                      <span className="text-2xl font-black">24</span>
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-bold text-slate-400">Fecha</p>
-
-                      <p className="font-black text-slate-900">
-                        24 Marzo 2026 · 6:15 PM
-                      </p>
-
-                      <p className="mt-4 text-sm font-bold text-slate-400">
-                        Lugar
-                      </p>
-
-                      <p className="font-semibold text-slate-700">
-                        Sala Bellina - Universidad CESMAG
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-3xl bg-slate-50 p-5">
-                    <p className="leading-7 text-slate-600">
-                      Espacio de integración, participación institucional y
-                      fortalecimiento de la comunidad ASEUNICESMAG.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* CARRUSEL MODERNO AUTOMÁTICO Y MANUAL */}
         <section className="relative overflow-hidden bg-white px-6 py-24">
           <div className="absolute left-0 top-20 h-72 w-72 rounded-full bg-blue-100 blur-3xl" />
@@ -234,7 +125,7 @@ export default function HomePage() {
                 <span className="h-2 w-2 rounded-full bg-blue-500" />
 
                 <p className="text-sm font-black uppercase tracking-[0.35em] text-blue-700">
-                  Beneficios destacados
+                  ASEUNICESMAG
                 </p>
 
                 <span className="h-2 w-2 rounded-full bg-blue-500" />
@@ -242,7 +133,7 @@ export default function HomePage() {
               </div>
 
               <h2 className="text-4xl font-black tracking-tight text-slate-950 md:text-6xl">
-                Nuestros beneficios, tu futuro
+                Asociacion de Engresados Universidad CESMAG
               </h2>
 
               <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-500">
@@ -342,6 +233,69 @@ export default function HomePage() {
                   aria-label={`Ver imagen ${index + 1}`}
                 />
               ))}
+            </div>
+          </div>
+
+          {/* EVENTOS */}
+          <div className="relative mx-auto mt-20 max-w-6xl">
+            <div className="absolute -inset-5 rounded-[3rem] bg-blue-900/10 blur-2xl" />
+
+            <div className="relative overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-2xl shadow-slate-900/10">
+              <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
+                {/* CABECERA EVENTO */}
+                <div className="bg-gradient-to-br from-blue-950 via-blue-800 to-blue-600 p-8 text-white">
+                  <p className="text-sm font-bold uppercase tracking-[0.25em] text-blue-100">
+                    Próximos eventos
+                  </p>
+
+                  <h2 className="mt-4 text-4xl font-black leading-tight">
+                    XIII Asamblea General
+                  </h2>
+
+                  <p className="mt-5 text-sm leading-7 text-blue-100">
+                    Espacio de integración, participación institucional y
+                    fortalecimiento de la comunidad ASEUNICESMAG.
+                  </p>
+                </div>
+
+                {/* INFORMACIÓN */}
+                <div className="grid gap-5 p-8 md:grid-cols-3">
+                  <div className="rounded-3xl bg-slate-50 p-5">
+                    <p className="text-sm font-black uppercase tracking-widest text-slate-400">
+                      Fecha
+                    </p>
+
+                    <div className="mt-4 flex items-center gap-4">
+                      <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-blue-950 text-white">
+                        <span className="text-xs font-bold">MAR</span>
+                        <span className="text-2xl font-black">24</span>
+                      </div>
+
+                      <p className="font-black text-slate-900">24 Marzo 2026</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-3xl bg-slate-50 p-5">
+                    <p className="text-sm font-black uppercase tracking-widest text-slate-400">
+                      Hora
+                    </p>
+
+                    <p className="mt-5 text-2xl font-black text-blue-950">
+                      6:15 PM
+                    </p>
+                  </div>
+
+                  <div className="rounded-3xl bg-slate-50 p-5">
+                    <p className="text-sm font-black uppercase tracking-widest text-slate-400">
+                      Lugar
+                    </p>
+
+                    <p className="mt-5 font-bold leading-7 text-slate-700">
+                      Sala Bellina - Universidad CESMAG
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

@@ -138,8 +138,8 @@ class ReporteCarteraController extends Controller
             $pagoAfiliacion = $recibosAsociado->first(function ($r) {
                 $texto = mb_strtolower(
                     ($r->tipo_obligacion ?? '') . ' ' .
-                        ($r->concepto ?? '') . ' ' .
-                        ($r->periodo ?? '')
+                    ($r->concepto ?? '') . ' ' .
+                    ($r->periodo ?? '')
                 );
 
                 return str_contains($texto, 'afiliacion') ||
@@ -151,14 +151,23 @@ class ReporteCarteraController extends Controller
             $pagosSostenimiento = $recibosAsociado->filter(function ($r) {
                 $texto = mb_strtolower(
                     ($r->tipo_obligacion ?? '') . ' ' .
-                        ($r->concepto ?? '') . ' ' .
-                        ($r->periodo ?? '')
+                    ($r->concepto ?? '') . ' ' .
+                    ($r->periodo ?? '')
                 );
 
-                return str_contains($texto, 'sostenimiento') ||
+                $esAfiliacion =
+                    str_contains($texto, 'afiliacion') ||
+                    str_contains($texto, 'afiliación') ||
+                    str_contains($texto, 'inscripcion') ||
+                    str_contains($texto, 'inscripción');
+
+                $esSostenimiento =
+                    str_contains($texto, 'sostenimiento') ||
                     str_contains($texto, 'mensual') ||
                     str_contains($texto, 'semestral') ||
-                    str_contains($texto, 'cuota');
+                    str_contains($texto, 'anual');
+
+                return !$esAfiliacion && $esSostenimiento;
             });
 
             $formaPago = $this->calcularFormaPago($recibosAsociado, $totalPagado);
@@ -198,7 +207,7 @@ class ReporteCarteraController extends Controller
                 $filaData[] = $pagoMes->ruta_archivo ?? '';
                 $filaData[] = $this->fecha($pagoMes->fecha_pago ?? null);
                 $filaData[] = $pagoMes
-                    ? trim(($pagoMes->concepto ?? '') . ' - $' . number_format((float) $pagoMes->valor_reportado, 0, ',', '.'))
+                    ? trim(($pagoMes->concepto ?? '') . ' - $' . number_format((float) $pagoMes->valor_base, 0, ',', '.'))
                     : '';
             }
 
@@ -264,15 +273,15 @@ class ReporteCarteraController extends Controller
             'CEDULA',
             'ASOCIADO',
             'ESTADO',
-            'PROGRAMA QUE EGRESÓ',
+            'NIVEL EDUCATIVO',
             'EN CONCEPTO DE PAGO DE LA INSCRIPCIÓN',
             'FECHA DE AFILIACIÓN',
             'CELULAR',
             'CORREO ELECTRÓNICO',
             'FECHA DE CUMPLEAÑOS',
             'DIRECCIÓN',
-            'NIVEL EDUCATIVO',
-            'PROFESIÓN ACTUAL',
+            'UNIVERSIDAD',
+            'PROGRAMA QUE EGRESÓ',
             'EMPRESA DONDE LABORA',
             'CARGO QUE DESEMPEÑA',
             'ESTRATO',

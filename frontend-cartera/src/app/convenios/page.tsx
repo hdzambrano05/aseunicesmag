@@ -5,12 +5,14 @@ import Link from "next/link";
 import {
   ArrowRight,
   BadgeCheck,
-  Building2,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
   Gift,
   Globe,
   IdCard,
+  Camera,
   Mail,
   MapPin,
   Phone,
@@ -28,6 +30,31 @@ import { convenios } from "../data/convenios";
 
 export default function ConveniosPage() {
   const [convenioSeleccionado, setConvenioSeleccionado] = useState<any>(null);
+  const [imagenActiva, setImagenActiva] = useState(0);
+
+  const abrirConvenio = (convenio: any) => {
+    setConvenioSeleccionado(convenio);
+    setImagenActiva(0);
+  };
+
+  const imagenesGaleria =
+    convenioSeleccionado?.imagenes && convenioSeleccionado.imagenes.length > 0
+      ? convenioSeleccionado.imagenes
+      : [];
+
+  const cambiarImagen = (direccion: "anterior" | "siguiente") => {
+    if (!imagenesGaleria.length) return;
+
+    setImagenActiva((prev) =>
+      direccion === "siguiente"
+        ? prev === imagenesGaleria.length - 1
+          ? 0
+          : prev + 1
+        : prev === 0
+          ? imagenesGaleria.length - 1
+          : prev - 1,
+    );
+  };
 
   return (
     <>
@@ -192,7 +219,7 @@ export default function ConveniosPage() {
             {convenios.map((convenio, index) => (
               <article
                 key={convenio.id}
-                onClick={() => setConvenioSeleccionado(convenio)}
+                onClick={() => abrirConvenio(convenio)}
                 className="group cursor-pointer overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-lg transition duration-300 hover:-translate-y-2 hover:shadow-2xl"
               >
                 <div className="relative flex h-64 items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50 p-8">
@@ -224,7 +251,7 @@ export default function ConveniosPage() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setConvenioSeleccionado(convenio);
+                      abrirConvenio(convenio);
                     }}
                     className="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full bg-blue-800 px-6 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-blue-900"
                   >
@@ -284,16 +311,79 @@ export default function ConveniosPage() {
               </button>
 
               <div className="grid md:grid-cols-[0.9fr_1.1fr]">
-                <div className="relative flex min-h-[360px] items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50 p-10">
+                <div className="relative flex min-h-[420px] items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50 p-8">
                   <div className="absolute left-0 top-0 h-56 w-56 rounded-full bg-blue-200/60 blur-3xl" />
                   <div className="absolute bottom-0 right-0 h-56 w-56 rounded-full bg-cyan-200/60 blur-3xl" />
 
-                  <div className="relative flex h-72 w-full items-center justify-center rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
-                    <img
-                      src={convenioSeleccionado.imagen}
-                      alt={convenioSeleccionado.nombre}
-                      className="max-h-full max-w-full object-contain"
-                    />
+                  <div className="relative w-full">
+                    <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border border-slate-200 bg-white p-3 shadow-xl">
+                      <img
+                        src={convenioSeleccionado.imagen}
+                        alt={convenioSeleccionado.nombre}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+
+                    {imagenesGaleria.length > 0 ? (
+                      <div>
+                        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-xl">
+                          <img
+                            src={imagenesGaleria[imagenActiva]}
+                            alt={`${convenioSeleccionado.nombre} imagen ${
+                              imagenActiva + 1
+                            }`}
+                            className="h-[320px] w-full object-cover"
+                          />
+
+                          {imagenesGaleria.length > 1 && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => cambiarImagen("anterior")}
+                                className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-blue-800 shadow-xl transition hover:bg-blue-800 hover:text-white"
+                              >
+                                <ChevronLeft className="h-6 w-6" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => cambiarImagen("siguiente")}
+                                className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-blue-800 shadow-xl transition hover:bg-blue-800 hover:text-white"
+                              >
+                                <ChevronRight className="h-6 w-6" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        {imagenesGaleria.length > 1 && (
+                          <div className="mt-4 flex items-center justify-center gap-2">
+                            {imagenesGaleria.map(
+                              (img: string, index: number) => (
+                                <button
+                                  key={`${img}-${index}`}
+                                  type="button"
+                                  onClick={() => setImagenActiva(index)}
+                                  className={
+                                    index === imagenActiva
+                                      ? "h-2.5 w-10 rounded-full bg-blue-800 transition-all"
+                                      : "h-2.5 w-2.5 rounded-full bg-blue-200 transition-all hover:bg-blue-400"
+                                  }
+                                />
+                              ),
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="relative flex h-72 w-full items-center justify-center rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
+                        <img
+                          src={convenioSeleccionado.imagen}
+                          alt={convenioSeleccionado.nombre}
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -371,6 +461,33 @@ export default function ConveniosPage() {
                         </div>
                       </div>
                     )}
+
+                    {convenioSeleccionado.redes_sociales?.length > 0 && (
+                      <div className="flex gap-3 rounded-2xl bg-slate-50 p-4 text-slate-700">
+                        <Camera className="mt-1 h-5 w-5 shrink-0 text-blue-700" />
+                        <div>
+                          <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                            Redes sociales
+                          </p>
+
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {convenioSeleccionado.redes_sociales.map(
+                              (red: any, index: number) => (
+                                <a
+                                  key={`${red.nombre}-${index}`}
+                                  href={red.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="rounded-full bg-blue-50 px-4 py-2 text-sm font-black text-blue-800 transition hover:bg-blue-800 hover:text-white"
+                                >
+                                  {red.nombre}
+                                </a>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -391,7 +508,7 @@ export default function ConveniosPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
+                <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200">
                   <table className="w-full border-collapse text-left">
                     <thead className="bg-blue-950 text-white">
                       <tr>

@@ -132,17 +132,7 @@ export default function AfiliacionPage() {
 
                 <div className="mt-8 flex flex-wrap gap-4">
                   <a
-                    href="/documentos/formulario-afiliacion.pdf"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#21409A] to-[#38BDF8] px-6 py-4 text-sm font-black text-white shadow-lg shadow-blue-300/30"
-                  >
-                    <Download size={18} />
-                    Formulario PDF
-                  </a>
-
-                  <a
-                    href="/documentos/reglamento-tarifas.pdf"
+                    href="/documentos/REGLAMENTO_TARIFAS_ASEUNICESMAG.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 rounded-full border border-[#cfe0ff] bg-[#f4f8ff] px-6 py-4 text-sm font-black text-[#21409A]"

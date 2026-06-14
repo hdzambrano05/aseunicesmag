@@ -25,7 +25,7 @@ export default function DashboardAsociado() {
   const [guardando, setGuardando] = useState(false);
   const [generando, setGenerando] = useState(false);
 
-  const [modalidad, setModalidad] = useState<Modalidad>("MENSUAL");
+  const [modalidad, setModalidad] = useState<Modalidad>("SEMESTRAL");
   const [modalAbierto, setModalAbierto] = useState(false);
   const [obligacionSeleccionada, setObligacionSeleccionada] =
     useState<any>(null);
@@ -258,9 +258,16 @@ export default function DashboardAsociado() {
     try {
       setGenerando(true);
 
-      const response = await generarSostenimiento({
+      /*const response = await generarSostenimiento({
         asociado_id: asociadoId,
         anio: new Date().getFullYear(),
+        modalidad,
+        fecha_pago: new Date().toISOString().slice(0, 10),
+      });*/
+
+      const response = await generarSostenimiento({
+        asociado_id: asociadoId,
+        anio: Number(smmlv?.anio),
         modalidad,
         fecha_pago: new Date().toISOString().slice(0, 10),
       });
@@ -407,15 +414,14 @@ export default function DashboardAsociado() {
 
                 <div className="mt-2 flex items-center gap-3">
                   <div
-                    className={`h-3 w-3 shrink-0 rounded-full ${
-                      tieneObligacionesPendientes
-                        ? "bg-red-500"
-                        : tieneReciboPendiente
-                          ? "bg-amber-500"
-                          : tieneReciboAprobado
-                            ? "bg-emerald-500"
-                            : "bg-slate-400"
-                    }`}
+                    className={`h-3 w-3 shrink-0 rounded-full ${tieneObligacionesPendientes
+                      ? "bg-red-500"
+                      : tieneReciboPendiente
+                        ? "bg-amber-500"
+                        : tieneReciboAprobado
+                          ? "bg-emerald-500"
+                          : "bg-slate-400"
+                      }`}
                   />
 
                   <p className="text-lg font-black text-slate-800 sm:text-xl">
@@ -461,7 +467,8 @@ export default function DashboardAsociado() {
                   disabled={tieneObligacionesPendientes || tieneReciboPendiente}
                   className="mt-2 h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#1d4ed8]"
                 >
-                  <option value="MENSUAL">Mensual</option>
+                  {/* <option value="MENSUAL">Mensual</option> */}
+
                   <option value="SEMESTRAL">Semestral</option>
                   <option value="ANUAL">Anual</option>
                 </select>
@@ -764,13 +771,12 @@ export default function DashboardAsociado() {
 
                           <td className="px-5 py-4">
                             <span
-                              className={`rounded-lg border px-3 py-1 text-xs font-bold ${
-                                recibo.estado === "APROBADO"
-                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                  : recibo.estado === "RECHAZADO"
-                                    ? "border-red-200 bg-red-50 text-red-700"
-                                    : "border-amber-200 bg-amber-50 text-amber-700"
-                              }`}
+                              className={`rounded-lg border px-3 py-1 text-xs font-bold ${recibo.estado === "APROBADO"
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : recibo.estado === "RECHAZADO"
+                                  ? "border-red-200 bg-red-50 text-red-700"
+                                  : "border-amber-200 bg-amber-50 text-amber-700"
+                                }`}
                             >
                               {recibo.estado}
                             </span>

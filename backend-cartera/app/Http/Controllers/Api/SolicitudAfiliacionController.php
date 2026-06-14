@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Mail\AfiliacionAprobadaMail;
 use App\Mail\AfiliacionRechazadaMail;
+use App\Mail\NuevaSolicitudAfiliacionMail;
 use App\Models\ArchivoAdjunto;
 use App\Models\Asociado;
 use App\Models\Obligacion;
@@ -383,6 +384,10 @@ class SolicitudAfiliacionController extends BaseApiController
             ]);
 
             DB::commit();
+
+            Mail::to('denilson1299@gmail.com')->send(
+                new NuevaSolicitudAfiliacionMail($solicitud)
+            );
 
             return $this->success(
                 $solicitud->fresh(['usuario', 'asociado', 'archivos']),

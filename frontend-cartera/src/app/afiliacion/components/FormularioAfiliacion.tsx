@@ -3,6 +3,7 @@
 import { useState } from "react";
 import BeneficiariosForm from "./BeneficiariosForm";
 import FirmaForm from "./FirmaForm";
+import ModalResultado from "../../components/ModalResultado";
 
 const pasos = [
   "Solicitud",
@@ -12,6 +13,23 @@ const pasos = [
   "Autorizaciones",
   "Soportes",
 ];
+
+const programasAcademicos = [
+  "Arquitectura",
+  "Diseño Gráfico",
+  "Administración de Empresas",
+  "Contaduría Pública",
+  "Tecnología en Marketing Digital",
+  "Derecho",
+  "Psicología",
+  "Licenciatura en Educación Infantil",
+  "Licenciatura en Educación Física",
+  "Ingeniería Electrónica",
+  "Ingeniería Financiera",
+  "Ingeniería Industrial",
+  "Ingeniería de Sistemas"
+];
+
 
 type Beneficiario = {
   identificacion: string;
@@ -25,6 +43,12 @@ export default function FormularioAfiliacion() {
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
   const [firmaBase64, setFirmaBase64] = useState("");
+  const [modalResultado, setModalResultado] = useState({
+    abierto: false,
+    tipo: "success" as "success" | "error",
+    titulo: "",
+    mensaje: "",
+  });
 
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([
     { identificacion: "", nombres: "", parentesco: "" },
@@ -88,7 +112,7 @@ export default function FormularioAfiliacion() {
 
     const form = e.currentTarget;
     const formData = new FormData(form);
-  
+
     if (!firmaBase64) {
       setError("Debe registrar la firma digital del solicitante.");
       setPasoActual(4);
@@ -128,17 +152,21 @@ export default function FormularioAfiliacion() {
 
         throw new Error(
           erroresLaravel ||
-            data?.message ||
-            data?.mensaje ||
-            data?.error ||
-            text ||
-            "No se pudo enviar la solicitud.",
+          data?.message ||
+          data?.mensaje ||
+          data?.error ||
+          text ||
+          "No se pudo enviar la solicitud.",
         );
       }
 
-      setMensaje(
-        "Solicitud de afiliación enviada correctamente. Queda pendiente de aprobación.",
-      );
+      setModalResultado({
+        abierto: true,
+        tipo: "success",
+        titulo: "Solicitud enviada correctamente",
+        mensaje:
+          "Tu solicitud de afiliación fue registrada con éxito. Queda pendiente de revisión y aprobación por parte del administrador.",
+      });
 
       form.reset();
       setFirmaBase64("");
@@ -146,12 +174,22 @@ export default function FormularioAfiliacion() {
       setPasoActual(0);
       setBeneficiarios([{ identificacion: "", nombres: "", parentesco: "" }]);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Error al enviar la solicitud.",
-      );
+      const mensajeError =
+        err instanceof Error ? err.message : "Error al enviar la solicitud.";
+
+      setError(mensajeError);
+
+      setModalResultado({
+        abierto: true,
+        tipo: "error",
+        titulo: "No se pudo enviar la solicitud",
+        mensaje: mensajeError,
+      });
     } finally {
       setLoading(false);
     }
+
+
   };
 
   return (
@@ -188,18 +226,16 @@ export default function FormularioAfiliacion() {
           {pasos.map((paso, index) => (
             <div
               key={paso}
-              className={`rounded-lg border px-2 py-2 text-center text-xs font-bold transition ${
-                index <= pasoActual
-                  ? "border-blue-700 bg-blue-700 text-white"
-                  : "border-slate-200 bg-slate-50 text-slate-500"
-              }`}
+              className={`rounded-lg border px-2 py-2 text-center text-xs font-bold transition ${index <= pasoActual
+                ? "border-blue-700 bg-blue-700 text-white"
+                : "border-slate-200 bg-slate-50 text-slate-500"
+                }`}
             >
               <span
-                className={`mx-auto mb-1 flex h-6 w-6 items-center justify-center rounded-full text-[11px] ${
-                  index <= pasoActual
-                    ? "bg-white text-blue-700"
-                    : "bg-white text-slate-500"
-                }`}
+                className={`mx-auto mb-1 flex h-6 w-6 items-center justify-center rounded-full text-[11px] ${index <= pasoActual
+                  ? "bg-white text-blue-700"
+                  : "bg-white text-slate-500"
+                  }`}
               >
                 {index + 1}
               </span>
@@ -402,11 +438,20 @@ export default function FormularioAfiliacion() {
                   <label className={labelClass}>
                     Título obtenido en la UNICESMAG
                   </label>
-                  <input
+
+                  <select
                     className={inputClass}
                     name="titulo_obtenido"
-                    placeholder="Programa o título"
-                  />
+                    defaultValue=""
+                  >
+                    <option value="">Seleccione un programa</option>
+
+                    {programasAcademicos.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -763,7 +808,7 @@ export default function FormularioAfiliacion() {
                     text: "PDF, JPG o PNG",
                     required: true,
                   },
-                  
+
                 ].map((file) => (
                   <label
                     key={file.name}
@@ -849,6 +894,19 @@ export default function FormularioAfiliacion() {
           </div>
         </form>
       </section>
+
+      <ModalResultado
+        abierto={modalResultado.abierto}
+        tipo={modalResultado.tipo}
+        titulo={modalResultado.titulo}
+        mensaje={modalResultado.mensaje}
+        onCerrar={() =>
+          setModalResultado((prev) => ({
+            ...prev,
+            abierto: false,
+          }))
+        }
+      />
     </main>
   );
 }

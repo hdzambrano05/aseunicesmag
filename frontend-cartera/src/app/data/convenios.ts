@@ -5,6 +5,8 @@ export const convenios = [
     categoria: "Hogar y diseño",
     imagen: "/landing/convenios/1.png",
 
+    imagenes: ["landing/convenios/1/1.jpg"],
+
     descripcion:
       "Elaboración y venta de juegos de sala, comedor, cocina integral, closets, estar de TV y repisas, todo hecho a medida.",
 
@@ -16,7 +18,20 @@ export const convenios = [
 
     sitio_web: "",
 
-    redes_sociales: [],
+    redes_sociales: [
+      {
+        nombre: "Facebook",
+        url: "https://facebook.com/crearMueblec",
+      },
+      {
+        nombre: "Instagram",
+        url: "https://instagram.com/crearMueblec",
+      },
+      {
+        nombre: "WhatsApp",
+        url: "https://wa.me/573188989187",
+      },
+    ],
 
     descuentos: [
       {
@@ -52,7 +67,7 @@ export const convenios = [
     nombre: "Ema Clothing Store",
     categoria: "Moda",
     imagen: "/landing/convenios/2.png",
-
+    imagenes: ["landing/convenios/2/2.jpg"],
     descripcion:
       "Encuentra prendas, conjuntos y accesorios que combinan diseño, elegancia y versatilidad.",
 
@@ -64,7 +79,16 @@ export const convenios = [
 
     sitio_web: "",
 
-    redes_sociales: [],
+    redes_sociales: [
+      {
+        nombre: "Facebook",
+        url: "https://www.facebook.com/EmaClothingStore",
+      },
+      {
+        nombre: "Instagram",
+        url: "https://www.instagram.com/emaclothingstore/",
+      },
+    ],
 
     descuentos: [
       {
@@ -81,6 +105,8 @@ export const convenios = [
     categoria: "Calzado",
     imagen: "/landing/convenios/3.png",
 
+    imagenes: ["landing/convenios/3/3.png"],
+
     descripcion:
       "Comercializan zapatos y artículos de cuerpo 100% legítimo, elaborados de forma artesanal. También ofrecen reparación de calzado.",
 
@@ -92,7 +118,16 @@ export const convenios = [
 
     sitio_web: "",
 
-    redes_sociales: [],
+    redes_sociales: [
+      {
+        nombre: "Facebook",
+        url: "https://www.facebook.com/people/Calza-Guzm%C3%A1n/pfbid0349cAqpa3RfB5DkHz5r4UaW5WVLzb6QqH5pJYaDDhUfmHfqwttxQFa9biEjWv49jvl/",
+      },
+      {
+        nombre: "Instagram",
+        url: "https://www.instagram.com/calzado_guzman_pasto/",
+      },
+    ],
 
     descuentos: [
       {
@@ -109,6 +144,8 @@ export const convenios = [
     categoria: "Belleza y estética",
     imagen: "/landing/convenios/4.png",
 
+    imagenes: ["landing/convenios/4/4.png"],
+
     descripcion:
       "Ofrecen cortes, cepillados, tratamientos capilares, coloración en un solo tono, mechas en diferentes estilos, manicura, depilación y muchos servicios más.",
 
@@ -120,7 +157,12 @@ export const convenios = [
 
     sitio_web: "",
 
-    redes_sociales: [],
+    redes_sociales: [
+      {
+        nombre: "Facebook",
+        url: "https://www.facebook.com/YazanHnosEstilistasProfesionales",
+      },
+    ],
 
     descuentos: [
       {
@@ -156,7 +198,7 @@ export const convenios = [
     nombre: "Galeras Mágico",
     categoria: "Regalos y decoración",
     imagen: "/landing/convenios/5.png",
-
+    imagenes: ["landing/convenios/5/5.png"],
     descripcion:
       "Ofrecen desayunos sorpresa, brunch, tardes especiales, arreglos, anchetas, obsequios personalizados, ramos y decoraciones florales.",
 
@@ -168,7 +210,16 @@ export const convenios = [
 
     sitio_web: "",
 
-    redes_sociales: [],
+    redes_sociales: [
+      {
+        nombre: "Facebook",
+        url: "https://www.facebook.com/galerasmagico",
+      },
+      {
+        nombre: "Instagram",
+        url: "https://www.instagram.com/galerasmagicotr/",
+      }
+    ],
 
     descuentos: [
       {
@@ -184,7 +235,7 @@ export const convenios = [
     nombre: "Sector 10",
     categoria: "Entrenamiento y bienestar",
     imagen: "/landing/convenios/6.png",
-
+    imagenes: ["landing/convenios/6/6.jpg"],
     descripcion:
       "Servicio de entrenamiento funcional que ayuda a desarrollar fuerza, flexibilidad y entrenamiento cardiovascular de manera natural y personalizada.",
 
@@ -197,7 +248,12 @@ export const convenios = [
 
     sitio_web: "",
 
-    redes_sociales: [],
+    redes_sociales: [
+      {
+        nombre: "Instagram",
+        url: "https://www.instagram.com/sector10_gym/",
+      }
+    ],
 
     descuentos: [
       {
@@ -213,7 +269,7 @@ export const convenios = [
     nombre: "Imagen Latente",
     categoria: "Fotografía",
     imagen: "/landing/convenios/7.png",
-
+    imagenes: ["landing/convenios/7/7.png"],
     descripcion: "La fotografía detiene el tiempo para hacerlo eterno.",
 
     direccion: "",
@@ -224,7 +280,16 @@ export const convenios = [
 
     sitio_web: "",
 
-    redes_sociales: [],
+    redes_sociales: [
+      {
+        nombre: "Facebook",
+        url: "https://www.facebook.com/people/Imagen-Latente/100077991665966/",
+      },
+      {
+        nombre: "Instagram",
+        url: "https://www.instagram.com/siempre_latente/",
+      },
+    ],
 
     descuentos: [
       {
@@ -240,6 +305,7 @@ export const convenios = [
     nombre: "Vertiluz – Persianas y Cortinas",
     categoria: "Decoración y hogar",
     imagen: "/landing/convenios/8.png",
+    imagenes: ["landing/convenios/8/8.png"],
 
     descripcion:
       "Le brinda asesoría especializada para decorar su hogar y oficina con productos de alta calidad, convirtiendo su espacio en lo que siempre ha soñado.",
@@ -252,7 +318,16 @@ export const convenios = [
 
     sitio_web: "",
 
-    redes_sociales: [],
+    redes_sociales: [
+      {
+        nombre: "Facebook",
+        url: "https://www.facebook.com/vertiluz.persianasy.cortinas.2025",
+      },
+      {
+        nombre: "Instagram",
+        url: "https://www.instagram.com/vertiluzpersianasycortinas/",
+      },
+    ],
 
     descuentos: [
       {
@@ -268,6 +343,7 @@ export const convenios = [
     nombre: "Orion Variedades",
     categoria: "Electrodomésticos y tecnología",
     imagen: "/landing/convenios/9.png",
+    imagenes: ["landing/convenios/9/9.jpg"],
 
     descripcion:
       "Variedad de productos electrodomésticos para el hogar, belleza y tecnología.",
@@ -298,6 +374,7 @@ export const convenios = [
     nombre: "Fundación Creativida",
     categoria: "Arte e inclusión",
     imagen: "/landing/convenios/10.png",
+    imagenes: ["landing/convenios/10/10.jpg"],
 
     descripcion:
       "Capacitaciones lúdicas, talleres de liderazgo, sketch teatrales, recreación dirigida empresarial, animación y coordinación de eventos, entre otros.",
@@ -310,7 +387,12 @@ export const convenios = [
 
     sitio_web: "",
 
-    redes_sociales: [],
+    redes_sociales: [
+      {
+        nombre: "Facebook",
+        url: "https://www.facebook.com/funcreativida",
+      },
+    ],
 
     descuentos: [
       {
@@ -326,6 +408,7 @@ export const convenios = [
     nombre: "Mar y Tierra",
     categoria: "Restaurante",
     imagen: "/landing/convenios/11.png",
+    imagenes: ["landing/convenios/11/11.png"],
 
     descripcion:
       "Sabores auténticos del mar y la tierra en desayunos, almuerzos, cenas y comidas rápidas.",
@@ -338,7 +421,16 @@ export const convenios = [
 
     sitio_web: "",
 
-    redes_sociales: [],
+    redes_sociales: [
+      {
+        nombre: "Facebook",
+        url: "https://www.facebook.com/MaryTierraRes",
+      },
+      {
+        nombre: "Instagram",
+        url: "https://www.instagram.com/marytierrarestaurante/",
+      },
+    ],
 
     descuentos: [
       {

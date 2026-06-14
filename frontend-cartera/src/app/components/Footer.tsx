@@ -22,22 +22,23 @@ export default function Footer() {
           {/* MARCA */}
           <div>
             <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/10 px-4 py-2 backdrop-blur">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#38BDF8] to-[#21409A]">
-                <HeartHandshake size={18} />
+              {/* LOGO */}
+              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-blue-900 shadow-lg">
+                <img
+                  src="logo/LOGOBLANCO.png"
+                  alt="ASEUNICESMAG"
+                  className="h-full w-full object-contain "
+                />
               </div>
 
-              <span className="text-xs font-black tracking-[0.25em]">
+              <span className="text-xs font-black tracking-[0.25em] text-white">
                 ASEUNICESMAG
               </span>
             </div>
-
-            <h2 className="mt-5 max-w-md text-2xl font-black leading-tight md:text-3xl">
-              Conectamos egresados y oportunidades.
-            </h2>
-
+            
             <p className="mt-4 max-w-md text-sm leading-6 text-blue-100/70">
-              Asociación comprometida con el crecimiento profesional,
-              académico y social de sus asociados.
+              Asociación comprometida con el crecimiento profesional, académico
+              y social de sus asociados.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-3">
@@ -106,9 +107,7 @@ export default function Footer() {
                       Pasto, Nariño
                     </p>
 
-                    <p className="text-xs text-blue-100/70">
-                      Colombia
-                    </p>
+                    <p className="text-xs text-blue-100/70">Colombia</p>
                   </div>
                 </div>
               </div>
@@ -119,7 +118,7 @@ export default function Footer() {
 
                   <div>
                     <p className="text-sm font-bold text-white">
-                      contacto@aseunicesmag.com
+                      aseunicesmag@gmail.com
                     </p>
 
                     <p className="text-xs text-blue-100/70">
@@ -135,7 +134,7 @@ export default function Footer() {
 
                   <div>
                     <p className="text-sm font-bold text-white">
-                      +57 300 000 0000
+                      +57 318 533 5311
                     </p>
 
                     <p className="text-xs text-blue-100/70">
@@ -181,9 +180,7 @@ export default function Footer() {
             reservados.
           </p>
 
-          <p className="font-medium">
-            Comunidad • Liderazgo • Transformación
-          </p>
+          <p className="font-medium">Comunidad • Liderazgo • Transformación</p>
         </div>
       </div>
     </footer>

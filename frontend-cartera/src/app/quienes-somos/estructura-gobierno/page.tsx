@@ -56,9 +56,8 @@ export default function EstructuraGobiernoPage() {
     return (
       <article
         onClick={() => abrirModal(persona)}
-        className={`group relative overflow-hidden rounded-[2rem] border bg-white shadow-xl shadow-blue-950/10 transition duration-300 hover:-translate-y-1 hover:shadow-2xl ${
-          principal ? "border-[#8fb7ff] p-5" : "border-[#dbe7ff] p-4"
-        } ${tienePortafolio ? "cursor-pointer" : "cursor-default opacity-95"}`}
+        className={`group relative overflow-hidden rounded-[2rem] border bg-white shadow-xl shadow-blue-950/10 transition duration-300 hover:-translate-y-1 hover:shadow-2xl ${principal ? "border-[#8fb7ff] p-5" : "border-[#dbe7ff] p-4"
+          } ${tienePortafolio ? "cursor-pointer" : "cursor-default opacity-95"}`}
       >
         <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#21409A]/10 blur-2xl" />
 
@@ -70,9 +69,8 @@ export default function EstructuraGobiernoPage() {
 
         <div className="relative flex items-center gap-4">
           <div
-            className={`relative shrink-0 overflow-hidden rounded-2xl ring-4 ring-[#eef5ff] ${
-              principal ? "h-24 w-24" : "h-20 w-20"
-            }`}
+            className={`relative shrink-0 overflow-hidden rounded-2xl ring-4 ring-[#eef5ff] ${principal ? "h-24 w-24" : "h-20 w-20"
+              }`}
           >
             <Image
               src={persona.foto}
@@ -89,9 +87,8 @@ export default function EstructuraGobiernoPage() {
             </div>
 
             <h3
-              className={`font-black leading-tight text-[#07122f] ${
-                principal ? "text-2xl" : "text-lg"
-              }`}
+              className={`font-black leading-tight text-[#07122f] ${principal ? "text-2xl" : "text-lg"
+                }`}
             >
               {persona.nombre}
             </h3>
@@ -172,10 +169,8 @@ export default function EstructuraGobiernoPage() {
         </section>
 
         <section className="relative mx-auto max-w-7xl px-6 py-20 lg:px-10">
-          <div className="absolute left-1/2 top-10 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-[#21409A]/30 via-[#38BDF8]/30 to-transparent lg:block" />
-
           <div className="relative mx-auto max-w-3xl">
-            <div className="mb-8 text-center">
+            <div className="mb-12 text-center">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-[#21409A] to-[#38BDF8] text-white shadow-xl shadow-blue-300/40">
                 <Crown size={32} />
               </div>
@@ -190,15 +185,62 @@ export default function EstructuraGobiernoPage() {
             </div>
           </div>
 
-          <div className="relative grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {juntaDirectiva.map((persona, index) => (
-              <div
-                key={persona.id}
-                className={index === 0 ? "lg:col-start-2" : ""}
-              >
-                <PersonaCard persona={persona} principal={index === 0} />
+          {/* ORGANIGRAMA */}
+          <div className="relative mx-auto max-w-6xl rounded-[3rem] border border-[#dbe7ff] bg-white/60 px-4 py-10 shadow-2xl shadow-blue-950/5 backdrop-blur md:px-8 lg:px-12">
+            <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_0%,rgba(56,189,248,0.16),transparent_35%)]" />
+
+            {/* Presidenta */}
+            <div className="relative z-20 mx-auto max-w-[460px]">
+              <div className="absolute -inset-2 -z-10 rounded-[2.5rem] bg-gradient-to-br from-[#21409A]/20 to-[#38BDF8]/20 blur-xl" />
+              <PersonaCard persona={juntaDirectiva[0]} principal />
+            </div>
+
+            {/* Línea Presidenta -> Control */}
+            <div className="mx-auto h-12 w-px bg-gradient-to-b from-[#21409A]/60 to-[#38BDF8]/60" />
+
+            {/* Área de Control */}
+            {control.length > 0 && (
+              <div className="relative z-20 mx-auto max-w-[520px] rounded-[2.5rem] border border-[#b8d4ff] bg-white p-5 shadow-2xl shadow-blue-950/10">
+                <div className="absolute -inset-1 -z-10 rounded-[2.7rem] bg-gradient-to-br from-[#21409A]/15 to-[#38BDF8]/20 blur-xl" />
+
+                <div className="mb-5 flex items-center justify-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#21409A] to-[#38BDF8] text-white shadow-lg">
+                    <ShieldCheck size={24} />
+                  </div>
+
+                  <div className="text-center">
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#21409A]">
+                      Área estratégica
+                    </p>
+                    <h2 className="text-2xl font-black text-[#07122f]">
+                      Área de Control
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="grid gap-4">
+                  {control.map((persona) => (
+                    <PersonaCard key={persona.id} persona={persona} />
+                  ))}
+                </div>
               </div>
-            ))}
+            )}
+
+            {/* Línea Control -> Junta */}
+            <div className="mx-auto h-12 w-px bg-gradient-to-b from-[#21409A]/60 to-[#38BDF8]/60" />
+
+            {/* Línea horizontal */}
+            <div className="mx-auto hidden h-px max-w-5xl bg-gradient-to-r from-transparent via-[#21409A]/50 to-transparent lg:block" />
+
+            {/* Directivos inferiores */}
+            <div className="relative mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+              {juntaDirectiva.slice(1).map((persona) => (
+                <div key={persona.id} className="relative">
+                  <div className="absolute -top-8 left-1/2 hidden h-8 w-px -translate-x-1/2 bg-[#21409A]/40 lg:block" />
+                  <PersonaCard persona={persona} />
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="relative mx-auto my-14 hidden h-20 w-px bg-gradient-to-b from-[#21409A]/40 to-[#38BDF8]/40 lg:block" />
@@ -229,14 +271,12 @@ export default function EstructuraGobiernoPage() {
 
           <div className="relative mx-auto my-14 hidden h-20 w-px bg-gradient-to-b from-[#21409A]/40 to-[#38BDF8]/40 lg:block" />
 
-          <div className="relative grid gap-8 lg:grid-cols-3">
+          <div className="relative grid gap-8 lg:grid-cols-2">
             <AreaCard
               titulo="Administrativa y financiera"
               icono={BriefcaseBusiness}
               personas={areaAdministrativa}
             />
-
-            <AreaCard titulo="Control" icono={ShieldCheck} personas={control} />
 
             <AreaCard
               titulo="Sistemas y Comunicaciones"
@@ -324,16 +364,14 @@ export default function EstructuraGobiernoPage() {
                 </div>
 
                 <ul className="space-y-3">
-                  {personaSeleccionada.perfil?.experiencia.map(
-                    (item, index) => (
-                      <li
-                        key={index}
-                        className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#52607c] shadow-sm"
-                      >
-                        {item}
-                      </li>
-                    ),
-                  )}
+                  {personaSeleccionada.perfil?.experiencia.map((item, index) => (
+                    <li
+                      key={index}
+                      className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#52607c] shadow-sm"
+                    >
+                      {item}
+                    </li>
+                  ))}
                 </ul>
               </section>
             </div>
