@@ -398,7 +398,7 @@ export default function DashboardAsociado() {
                 </p>
 
                 <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-800 sm:text-3xl">
-                  Dashboard Asociado
+                  Inicio Asociado
                 </h1>
 
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">

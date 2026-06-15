@@ -195,9 +195,6 @@ export default function EstructuraGobiernoPage() {
               <PersonaCard persona={juntaDirectiva[0]} principal />
             </div>
 
-            {/* Línea Presidenta -> Control */}
-            <div className="mx-auto h-12 w-px bg-gradient-to-b from-[#21409A]/60 to-[#38BDF8]/60" />
-
             {/* Área de Control */}
             {control.length > 0 && (
               <div className="relative z-20 mx-auto max-w-[520px] rounded-[2.5rem] border border-[#b8d4ff] bg-white p-5 shadow-2xl shadow-blue-950/10">
@@ -226,24 +223,16 @@ export default function EstructuraGobiernoPage() {
               </div>
             )}
 
-            {/* Línea Control -> Junta */}
-            <div className="mx-auto h-12 w-px bg-gradient-to-b from-[#21409A]/60 to-[#38BDF8]/60" />
-
-            {/* Línea horizontal */}
-            <div className="mx-auto hidden h-px max-w-5xl bg-gradient-to-r from-transparent via-[#21409A]/50 to-transparent lg:block" />
 
             {/* Directivos inferiores */}
             <div className="relative mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
               {juntaDirectiva.slice(1).map((persona) => (
                 <div key={persona.id} className="relative">
-                  <div className="absolute -top-8 left-1/2 hidden h-8 w-px -translate-x-1/2 bg-[#21409A]/40 lg:block" />
                   <PersonaCard persona={persona} />
                 </div>
               ))}
             </div>
           </div>
-
-          <div className="relative mx-auto my-14 hidden h-20 w-px bg-gradient-to-b from-[#21409A]/40 to-[#38BDF8]/40 lg:block" />
 
           {administracion && (
             <div className="relative mx-auto max-w-3xl rounded-[2.8rem] border border-[#c7dcff] bg-white p-6 shadow-2xl shadow-blue-950/10">
@@ -268,8 +257,6 @@ export default function EstructuraGobiernoPage() {
               <PersonaCard persona={administracion} principal />
             </div>
           )}
-
-          <div className="relative mx-auto my-14 hidden h-20 w-px bg-gradient-to-b from-[#21409A]/40 to-[#38BDF8]/40 lg:block" />
 
           <div className="relative grid gap-8 lg:grid-cols-2">
             <AreaCard

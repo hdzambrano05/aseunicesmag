@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Pagination } from "swiper/modules";
+
+import "swiper/css";
+import "swiper/css/pagination";
+
+import { convenios } from "../data/convenios";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -317,27 +324,53 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mt-14 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {aliados.map((aliado) => (
-              <article
-                key={aliado.nombre}
-                className="group rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-lg transition hover:-translate-y-2 hover:shadow-2xl"
-              >
-                <div className="flex h-36 items-center justify-center overflow-hidden rounded-3xl bg-slate-50">
-                  <img
-                    src={aliado.imagen}
-                    alt={aliado.nombre}
-                    className="max-h-28 max-w-full object-contain transition duration-300 group-hover:scale-105"
-                  />
-                </div>
+          <div className="mt-14">
+            <Swiper
+              modules={[Autoplay, Pagination]}
+              spaceBetween={30}
+              loop={true}
+              autoplay={{
+                delay: 2500,
+                disableOnInteraction: false,
+              }}
+              pagination={{
+                clickable: true,
+              }}
+              breakpoints={{
+                320: {
+                  slidesPerView: 1,
+                },
+                640: {
+                  slidesPerView: 2,
+                },
+                1024: {
+                  slidesPerView: 3,
+                },
+                1280: {
+                  slidesPerView: 4,
+                },
+              }}
+            >
+              {convenios.map((convenio) => (
+                <SwiperSlide key={convenio.id}>
+                  <article className="group h-full rounded-[2.5rem] border border-slate-200 bg-white p-8 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+                    <div className="flex h-40 items-center justify-center overflow-hidden rounded-3xl bg-slate-50">
+                      <img
+                        src={convenio.imagen}
+                        alt={convenio.nombre}
+                        className="max-h-28 max-w-full object-contain transition duration-300 group-hover:scale-105"
+                      />
+                    </div>
 
-                <div className="mt-6 text-center">
-                  <p className="text-lg font-black text-slate-900">
-                    {aliado.nombre}
-                  </p>
-                </div>
-              </article>
-            ))}
+                    <div className="mt-6 text-center">
+                      <p className="text-lg font-black text-slate-900">
+                        {convenio.nombre}
+                      </p>
+                    </div>
+                  </article>
+                </SwiperSlide>
+              ))}
+            </Swiper>
           </div>
         </section>
 

@@ -1,18 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import {
-  CalendarDays,
-  Landmark,
-  Sparkles,
-  Users,
-  ArrowRight,
-  ImageIcon,
   Building2,
-  BadgeCheck,
-  HeartHandshake,
-  Waves,
+  ChevronLeft,
+  ChevronRight,
   GraduationCap,
+  Sparkles,
 } from "lucide-react";
 
 import Navbar from "../../components/Navbar";
@@ -20,60 +15,37 @@ import Footer from "../../components/Footer";
 
 export default function NuestraHistoriaPage() {
   const imagenPrincipal = "/landing/nuestra-historia/4.jpeg";
-  const imagenHistorica = "/landing/nuestra-historia/1.jpg";
 
-  const fotos = [
-    {
-      titulo: "Primera Asamblea",
-      texto: "Fotografía histórica de la conformación de ASEUNICESMAG.",
-      imagen: "/landing/nuestra-historia/2.jpg",
-    },
-    {
-      titulo: "Comunidad de Egresados",
-      texto: "Encuentros, participación e integración de asociados.",
-      imagen: "/landing/nuestra-historia/3.jpg",
-    },
-    {
-      titulo: "Nueva etapa institucional",
-      texto: "Refundación, modernización y fortalecimiento institucional.",
-      imagen: "/landing/nuestra-historia/6.jpeg",
-    },
+  const fotosFundacion = [
+    "/landing/nuestra-historia/1.jpg",
+    "/landing/nuestra-historia/2.jpg",
+    "/landing/nuestra-historia/3.jpg",
   ];
 
-  const hitos = [
-    {
-      fecha: "Octubre de 2013",
-      titulo: "Primera Asamblea",
-      texto: "Se realizó la Asamblea de conformación de ASEUNICESMAG.",
-    },
-    {
-      fecha: "Enero de 2014",
-      titulo: "Constitución legal",
-      texto:
-        "La Asociación fue legalmente constituida como espacio de encuentro, apoyo y desarrollo profesional.",
-    },
-    {
-      fecha: "Agosto de 2025",
-      titulo: "Nueva etapa institucional",
-      texto:
-        "Actualización de Estatutos mediante Acta No. 012 y fortalecimiento del gobierno corporativo.",
-    },
+  const fotosRefundacion = [
+    "/landing/nuestra-historia/new/1.jpg",
+    "/landing/nuestra-historia/new/2.jpg",
+    "/landing/nuestra-historia/new/3.jpg",
   ];
 
-  const pilares = [
-    {
-      titulo: "Identidad institucional",
-      icono: Building2,
-    },
-    {
-      titulo: "Modernización tecnológica",
-      icono: Sparkles,
-    },
-    {
-      titulo: "Compromiso social",
-      icono: HeartHandshake,
-    },
-  ];
+  const [fundacionIndex, setFundacionIndex] = useState(0);
+  const [refundacionIndex, setRefundacionIndex] = useState(0);
+
+  const siguiente = (
+    total: number,
+    actual: number,
+    setActual: React.Dispatch<React.SetStateAction<number>>,
+  ) => {
+    setActual(actual === total - 1 ? 0 : actual + 1);
+  };
+
+  const anterior = (
+    total: number,
+    actual: number,
+    setActual: React.Dispatch<React.SetStateAction<number>>,
+  ) => {
+    setActual(actual === 0 ? total - 1 : actual - 1);
+  };
 
   return (
     <>
@@ -132,7 +104,7 @@ export default function NuestraHistoriaPage() {
                 <div className="-rotate-1 overflow-hidden rounded-[2.2rem] border border-white/20 bg-white/10">
                   <div className="relative h-[390px] w-full">
                     <Image
-                      src={imagenPrincipal}
+                      src="/landing/nuestra-historia/new/1.jpg"
                       alt="Historia de ASEUNICESMAG"
                       fill
                       priority
@@ -177,213 +149,174 @@ export default function NuestraHistoriaPage() {
           </div>
         </section>
 
-        {/* FUNDACIÓN Y REFUNDACIÓN */}
-        <section className="relative mx-auto max-w-7xl px-6 py-16 lg:px-10">
-          <div className="grid gap-6 lg:grid-cols-12">
-            <article className="relative overflow-hidden rounded-[2.4rem] border border-[#dbe7ff] bg-white p-7 shadow-lg shadow-blue-950/5 lg:col-span-7">
-              <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-[#21409A]/10 blur-3xl" />
-
-              <div className="relative flex flex-col gap-6 md:flex-row">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.4rem] bg-gradient-to-br from-[#21409A] to-[#38BDF8] text-white shadow-xl shadow-blue-300/30">
-                  <Landmark size={30} />
-                </div>
+        {/* CONTENIDO */}
+        <section className="mx-auto max-w-7xl px-6 py-20 lg:px-10">
+          <div className="space-y-24">
+            {/* FUNDACIÓN */}
+            <div className="grid items-start gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+              <div className="flex gap-5">
+                <Building2 className="mt-1 shrink-0 text-gray-400" size={34} />
 
                 <div>
-                  <span className="text-xs font-black uppercase tracking-[0.35em] text-[#21409A]">
+                  <h2 className="text-3xl font-black text-[#143a78]">
                     Fundación
-                  </span>
-
-                  <h2 className="mt-3 text-3xl font-black text-[#07122f]">
-                    El origen de una comunidad de egresados
                   </h2>
 
-                  <p className="mt-4 leading-7 text-[#44506b]">
+                  <p className="mt-2 text-[15px] leading-7 text-[#07122f]">
                     La Asociación de Egresados de la Universidad CESMAG –
                     ASEUNICESMAG nació como una iniciativa de un grupo de
                     profesionales comprometidos con mantener el vínculo con su
                     Alma Máter y fortalecer la identidad institucional de los
                     egresados.
                   </p>
-                </div>
-              </div>
-            </article>
 
-            <article className="relative overflow-hidden rounded-[2.4rem] bg-gradient-to-br from-[#21409A] via-[#2754B8] to-[#0B7C95] p-7 text-white shadow-xl shadow-blue-950/20 lg:col-span-5">
-              <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-white/15 blur-3xl" />
-
-              <Users size={38} />
-
-              <span className="mt-6 block text-xs font-black uppercase tracking-[0.35em] text-cyan-100">
-                Refundación
-              </span>
-
-              <h2 className="mt-3 text-3xl font-black">
-                Una nueva etapa institucional
-              </h2>
-
-              <p className="mt-4 leading-7 text-blue-50">
-                En 2025, ASEUNICESMAG emprendió un proceso de refundación y
-                fortalecimiento institucional, dando paso a una etapa
-                caracterizada por la actualización estatutaria, la ética
-                corporativa y la modernización tecnológica.
-              </p>
-            </article>
-          </div>
-
-          {/* TIMELINE + IMAGEN */}
-          <div className="mt-8 grid gap-6 lg:grid-cols-[0.75fr_1.25fr]">
-            <div className="relative overflow-hidden rounded-[2rem] border border-[#dbe7ff] bg-white p-3 shadow-lg shadow-blue-950/5">
-              <div className="relative h-[260px] overflow-hidden rounded-[1.5rem]">
-                <Image
-                  src={imagenHistorica}
-                  alt="Imagen histórica ASEUNICESMAG"
-                  fill
-                  className="object-cover"
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-[#07122f]/75 via-[#07122f]/15 to-transparent" />
-
-                <div className="absolute bottom-0 left-0 p-5 text-white">
-                  <ImageIcon className="mb-2" size={28} />
-                  <p className="text-xl font-black">Imagen histórica</p>
-                  <p className="mt-1 text-xs leading-5 text-blue-50">
-                    Registro institucional de la historia de ASEUNICESMAG.
+                  <p className="mt-7 text-[15px] leading-7 text-[#07122f]">
+                    Su primera Asamblea de conformación se realizó en octubre de
+                    2013, y la Asociación fue legalmente constituida en enero de
+                    2014, consolidándose como un espacio de encuentro, apoyo y
+                    desarrollo profesional.
                   </p>
                 </div>
               </div>
-            </div>
 
-            <div className="relative overflow-hidden rounded-[2rem] border border-[#dbe7ff] bg-white p-6 shadow-lg shadow-blue-950/5">
-              <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-cyan-300/10 blur-3xl" />
+              <div>
+                <div className="relative h-[280px] w-full overflow-hidden bg-slate-100 shadow-md md:h-[360px]">
+                  <Image
+                    src={fotosFundacion[fundacionIndex]}
+                    alt="Fundación ASEUNICESMAG"
+                    fill
+                    className="object-cover"
+                  />
 
-              <div className="relative">
-                <span className="inline-flex items-center gap-2 rounded-full bg-[#eef5ff] px-4 py-2 text-xs font-black text-[#21409A]">
-                  <Waves size={15} />
-                  Línea de tiempo
-                </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      anterior(
+                        fotosFundacion.length,
+                        fundacionIndex,
+                        setFundacionIndex,
+                      )
+                    }
+                    className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#07122f] shadow-lg transition hover:scale-105"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
 
-                <h2 className="mt-5 text-3xl font-black leading-tight text-[#07122f]">
-                  Momentos que marcaron la historia de ASEUNICESMAG
-                </h2>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      siguiente(
+                        fotosFundacion.length,
+                        fundacionIndex,
+                        setFundacionIndex,
+                      )
+                    }
+                    className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#07122f] shadow-lg transition hover:scale-105"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </div>
 
-                <div className="mt-6 space-y-4">
-                  {hitos.map((hito) => (
-                    <div
-                      key={hito.fecha}
-                      className="relative rounded-[1.5rem] border border-[#dbe7ff] bg-[#f8fbff] p-4"
-                    >
-                      <div className="flex gap-4">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eef5ff] text-[#21409A]">
-                          <CalendarDays size={18} />
-                        </div>
-
-                        <div>
-                          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#21409A]">
-                            {hito.fecha}
-                          </p>
-
-                          <h3 className="mt-1 text-lg font-black text-[#07122f]">
-                            {hito.titulo}
-                          </h3>
-
-                          <p className="mt-1 text-sm leading-6 text-[#52607c]">
-                            {hito.texto}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                <div className="mt-5 flex justify-center gap-3">
+                  {fotosFundacion.map((_, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setFundacionIndex(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        fundacionIndex === index
+                          ? "w-9 bg-black"
+                          : "w-2 bg-gray-300"
+                      }`}
+                    />
                   ))}
                 </div>
               </div>
             </div>
-          </div>
-        </section>
 
-        {/* NUEVA ETAPA */}
-        <section className="relative overflow-hidden bg-[#071f4d] py-16">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.18),transparent_32%),linear-gradient(135deg,#071f4d,#21409A_60%,#0B7C95)]" />
+            {/* REFUNDACIÓN */}
+            <div className="grid items-start gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+              <div className="flex gap-5">
+                <Building2 className="mt-1 shrink-0 text-gray-400" size={34} />
 
-          <div className="relative mx-auto max-w-7xl px-6 lg:px-10">
-            <div className="grid items-center gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+                <div>
+                  <h2 className="text-3xl font-black text-[#143a78]">
+                    Refundación
+                  </h2>
+
+                  <p className="mt-2 text-[15px] leading-7 text-[#173b6c]">
+                    En 2025, ASEUNICESMAG emprendió un proceso de refundación y
+                    fortalecimiento institucional, que dio paso a una nueva
+                    etapa caracterizada por la actualización de sus Estatutos
+                    (Acta No. 012 de agosto de 2025), la aprobación del Código
+                    de Gobierno Corporativo y Ética, y la implementación de una
+                    estrategia de modernización tecnológica con la creación de su
+                    nuevo sitio web y sistema digital de afiliación.
+                  </p>
+
+                  <p className="mt-7 text-[15px] leading-7 text-[#173b6c]">
+                    Hoy, ASEUNICESMAG se consolida como una comunidad moderna,
+                    ética e inclusiva, que integra la tradición humanista de la
+                    Universidad CESMAG con los retos del presente, promoviendo el
+                    liderazgo, la innovación y el compromiso social de sus
+                    egresados.
+                  </p>
+                </div>
+              </div>
+
               <div>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-black text-white backdrop-blur">
-                  <BadgeCheck size={15} />
-                  Nueva etapa institucional
-                </span>
+                <div className="relative h-[280px] w-full overflow-hidden bg-slate-100 shadow-md md:h-[360px]">
+                  <Image
+                    src={fotosRefundacion[refundacionIndex]}
+                    alt="Refundación ASEUNICESMAG"
+                    fill
+                    className="object-cover"
+                  />
 
-                <h2 className="mt-6 max-w-xl text-4xl font-black leading-tight text-white md:text-5xl">
-                  Modernización, ética y compromiso social
-                </h2>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      anterior(
+                        fotosRefundacion.length,
+                        refundacionIndex,
+                        setRefundacionIndex,
+                      )
+                    }
+                    className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#07122f] shadow-lg transition hover:scale-105"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
 
-                <p className="mt-5 max-w-xl leading-7 text-blue-50">
-                  En el marco de su fortalecimiento institucional, ASEUNICESMAG
-                  actualizó sus Estatutos mediante el Acta No. 012 de agosto de
-                  2025, aprobó el Código de Gobierno Corporativo y Ética, e
-                  inició una estrategia de modernización tecnológica con la
-                  creación de su nuevo sitio web y sistema digital de
-                  afiliación.
-                </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      siguiente(
+                        fotosRefundacion.length,
+                        refundacionIndex,
+                        setRefundacionIndex,
+                      )
+                    }
+                    className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#07122f] shadow-lg transition hover:scale-105"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </div>
 
-                <p className="mt-4 max-w-xl leading-7 text-blue-50">
-                  Hoy, ASEUNICESMAG se consolida como una comunidad moderna,
-                  ética e inclusiva, que integra la tradición humanista de la
-                  Universidad CESMAG con los retos del presente.
-                </p>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                {pilares.map((item) => {
-                  const Icono = item.icono;
-
-                  return (
-                    <article
-                      key={item.titulo}
-                      className="group rounded-[1.7rem] border border-white/15 bg-white/10 p-6 text-white backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:bg-white/15"
-                    >
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-[#21409A] shadow-lg">
-                        <Icono size={24} />
-                      </div>
-
-                      <h3 className="mt-5 text-xl font-black leading-tight">
-                        {item.titulo}
-                      </h3>
-
-                      <ArrowRight
-                        className="mt-4 transition group-hover:translate-x-1"
-                        size={20}
-                      />
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="mt-14 grid gap-6 md:grid-cols-3">
-              {fotos.map((foto) => (
-                <article
-                  key={foto.titulo}
-                  className="group relative overflow-hidden rounded-[2rem] bg-white shadow-xl shadow-blue-950/10"
-                >
-                  <div className="relative h-[300px] w-full">
-                    <Image
-                      src={foto.imagen}
-                      alt={foto.titulo}
-                      fill
-                      className="object-cover transition duration-500 group-hover:scale-110"
+                <div className="mt-5 flex justify-center gap-3">
+                  {fotosRefundacion.map((_, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setRefundacionIndex(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        refundacionIndex === index
+                          ? "w-9 bg-black"
+                          : "w-2 bg-gray-300"
+                      }`}
                     />
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#07122f]/95 via-[#07122f]/60 to-transparent" />
-                  </div>
-
-                  <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-                    <h3 className="text-2xl font-black">{foto.titulo}</h3>
-
-                    <p className="mt-2 text-sm leading-6 text-white/85">
-                      {foto.texto}
-                    </p>
-                  </div>
-                </article>
-              ))}
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </section>

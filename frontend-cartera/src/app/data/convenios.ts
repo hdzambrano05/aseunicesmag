@@ -474,6 +474,7 @@ export const convenios = [
     nombre: "Iswo",
     categoria: "Software e inteligencia artificial",
     imagen: "/landing/convenios/13.png",
+    imagenes: ["landing/convenios/13/13.jpg"],
 
     descripcion:
       "Apoyan a líderes a facilitar y optimizar Sistemas de Gestión de Calidad, SST & HSEQ, con Software + IA ISO 9001, 14001, 45001, 27001 y más.",

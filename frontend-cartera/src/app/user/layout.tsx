@@ -14,7 +14,7 @@ export default function AsociadoLayout({
 
   const menu = [
     {
-      label: "Dashboard",
+      label: "Inicio",
       icon: LayoutDashboard,
       path: "/asociado/dashboard",
     },

@@ -25,7 +25,7 @@ export default function Footer() {
               {/* LOGO */}
               <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-blue-900 shadow-lg">
                 <img
-                  src="logo/LOGOBLANCO.png"
+                  src="/logo/LOGOBLANCO.png"
                   alt="ASEUNICESMAG"
                   className="h-full w-full object-contain "
                 />
