@@ -56,6 +56,10 @@ const slides = [
     imagen: "/landing/slide-5.jpeg",
     alt: "Actividades institucionales ASEUNICESMAG",
   },
+  {
+    imagen: "/landing/wp.jpg",
+    alt: "Actividades institucionales ASEUNICESMAG",
+  },
 ];
 
 /* ================================================================
@@ -170,11 +174,10 @@ export default function HomePage() {
             {slides.map((slide, index) => (
               <div
                 key={slide.imagen}
-                className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
-                  index === slideActivo
+                className={`absolute inset-0 transition-all duration-1000 ease-in-out ${index === slideActivo
                     ? "z-10 scale-100 opacity-100"
                     : "z-0 scale-[1.015] opacity-0"
-                }`}
+                  }`}
               >
                 <img
                   src={slide.imagen}
@@ -216,11 +219,10 @@ export default function HomePage() {
                   type="button"
                   onClick={() => setSlideActivo(index)}
                   aria-label={`Ver banner ${index + 1}`}
-                  className={`rounded-full border-2 border-white transition-all duration-300 ${
-                    index === slideActivo
+                  className={`rounded-full border-2 border-white transition-all duration-300 ${index === slideActivo
                       ? "h-4 w-4 bg-white shadow-[0_0_0_4px_rgba(255,255,255,0.15)]"
                       : "h-3 w-3 bg-transparent hover:scale-125 hover:bg-white/50"
-                  }`}
+                    }`}
                 />
               ))}
             </div>
@@ -233,11 +235,10 @@ export default function HomePage() {
                   type="button"
                   onClick={() => setSlideActivo(index)}
                   aria-label={`Ver banner ${index + 1}`}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    index === slideActivo
+                  className={`h-2 rounded-full transition-all duration-300 ${index === slideActivo
                       ? "w-8 bg-white"
                       : "w-2 bg-white/60"
-                  }`}
+                    }`}
                 />
               ))}
             </div>
@@ -395,6 +396,9 @@ export default function HomePage() {
                   1280: {
                     slidesPerView: 4,
                   },
+                  2048: {
+                    slidesPerView: 5,
+                  },
                 }}
               >
                 {convenios.map((convenio, index) => (
@@ -491,9 +495,8 @@ export default function HomePage() {
                 return (
                   <article
                     key={beneficio.titulo}
-                    className={`group relative min-h-[270px] overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.07] p-7 backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.11] md:p-8 ${
-                      tamanos[index]
-                    }`}
+                    className={`group relative min-h-[270px] overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.07] p-7 backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.11] md:p-8 ${tamanos[index]
+                      }`}
                   >
                     <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-blue-400/10 blur-3xl transition-all duration-500 group-hover:bg-blue-400/20" />
 
