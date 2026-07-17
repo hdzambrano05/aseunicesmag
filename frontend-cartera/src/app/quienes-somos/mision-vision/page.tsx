@@ -78,7 +78,7 @@ export default function MisionVisionPage() {
                 <div className="-rotate-1 overflow-hidden rounded-[2.2rem] border border-white/20">
                   <div className="relative h-[420px]">
                     <Image
-                      src="/landing/mision/mision.jpg"
+                      src="/landing/mision/mision1.jpeg"
                       alt="Imagen institucional"
                       fill
                       priority
@@ -227,9 +227,6 @@ export default function MisionVisionPage() {
               ))}
             </div>
 
-            <p className="mt-10 text-sm text-slate-500">
-              Iconos diseñados por Wichai.wi from www.flaticon.es
-            </p>
           </div>
         </section>
       </main>

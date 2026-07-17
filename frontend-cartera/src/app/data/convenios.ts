@@ -69,7 +69,7 @@ export const convenios = [
     imagen: "/landing/convenios/2.png",
     imagenes: ["landing/convenios/2/2.jpg"],
     descripcion:
-      "Encuentra prendas, conjuntos y accesorios que combinan diseño, elegancia y versatilidad.",
+      "Encuentra prendas, conjuntos y accesorios que combinan diseño, elegancia y versatilidad",
 
     direccion: "Cra. 27 # 19-12, Centro",
 
@@ -78,6 +78,7 @@ export const convenios = [
     correo: "",
 
     sitio_web: "",
+    observacion: "Aplica descuento por compras mayor o igual a $ 100.000. Este beneficio no aplica para algunas formas de pago con financiación.",
 
     redes_sociales: [
       {
@@ -144,7 +145,7 @@ export const convenios = [
     categoria: "Belleza y estética",
     imagen: "/landing/convenios/4.png",
 
-    imagenes: ["landing/convenios/4/4.png"],
+    imagenes: ["landing/convenios/4/yazane.png","landing/convenios/4/4.png"],
 
     descripcion:
       "Ofrecen cortes, cepillados, tratamientos capilares, coloración en un solo tono, mechas en diferentes estilos, manicura, depilación y muchos servicios más.",
@@ -358,7 +359,7 @@ export const convenios = [
 
     redes_sociales: [],
 
-    observacion: "Aplica descuento por compras mayores o iguales a $150.000.",
+    observacion: "Aplica descuento por compras mayor o igual a $ 100.000. Este beneficio no aplica para algunas formas de pago con financiación.",
 
     descuentos: [
       {
@@ -446,6 +447,7 @@ export const convenios = [
     nombre: "Gennia360",
     categoria: "Servicios empresariales",
     imagen: "/landing/convenios/12.png",
+    imagenes: ["landing/convenios/12/imgconvenio1.png"],
 
     descripcion:
       "Ofrecen una gama completa de servicios empresariales diseñados para impulsar el crecimiento y la eficiencia de su negocio.",

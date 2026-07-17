@@ -165,7 +165,7 @@ export default function FormularioAfiliacion() {
         tipo: "success",
         titulo: "Solicitud enviada correctamente",
         mensaje:
-          "Tu solicitud de afiliación fue registrada con éxito. Queda pendiente de revisión y aprobación por parte del administrador.",
+          "Tu solicitud de afiliación fue registrada con éxito. Por favor, estar pendiente del correo de aceptación o rechazo, el cual puede llegar a la bandeja principal o a la carpeta de spam.",
       });
 
       form.reset();
